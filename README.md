@@ -7,16 +7,17 @@ A free, open-source web application designed specifically for animal rescue orga
 ## Features
 
 - 📊 **Google Sheets Integration** - Store all animal records in a spreadsheet for easy viewing, sorting, and analysis
-- 📦 **Dropbox Photo Storage** - Automatically upload and organize animal photos with shareable links
+- 📦 **Dropbox Photo Storage** - Upload and organize animal photos with shareable links
+- ☁️ **OneDrive Photo Storage** - Alternative option for Microsoft users to store photos
 - 🆔 **Unique Animal IDs** - Automatically generated tracking IDs for each rescue
 - 🔒 **Privacy-First** - API tokens stored only in your browser session, never on any server
 - 📱 **Mobile Friendly** - Works great on phones and tablets for field use
 - 💰 **Zero Cost** - Runs entirely on GitHub Pages (free) and your existing cloud storage
-- 🔧 **Extensible Architecture** - Designed to easily add more cloud storage providers
+- 🔧 **Flexible** - Choose the photo storage provider that works best for your organization
 
 ## Why AnimalOps?
 
-Built specifically for nonprofit animal rescue organizations that need a simple, cost-effective way to track rescued animals without expensive specialized software. If you already use Google Sheets and Dropbox, you can start using AnimalOps immediately at no additional cost.
+Built specifically for nonprofit animal rescue organizations that need a simple, cost-effective way to track rescued animals without expensive specialized software. If you already use Google Sheets and either Dropbox or OneDrive, you can start using AnimalOps immediately at no additional cost.
 
 ## Quick Start
 
@@ -46,7 +47,7 @@ Built specifically for nonprofit animal rescue organizations that need a simple,
 
 **Note:** Google Sheets access tokens expire after ~1 hour. The app will prompt you to enter a new one when needed.
 
-### 3. Set Up Dropbox
+### 3. Set Up Dropbox (Option 1 for Photo Storage)
 
 **Create an App:**
 1. Go to [Dropbox App Console](https://www.dropbox.com/developers/apps)
@@ -67,11 +68,43 @@ Built specifically for nonprofit animal rescue organizations that need a simple,
 
 **Note:** Dropbox tokens don't expire, but keep them secure!
 
-### 4. Start Using AnimalOps
+### 4. Set Up OneDrive (Option 2 for Photo Storage)
+
+**Register an Application:**
+1. Go to [Azure Portal - App Registrations](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade)
+2. Click "New registration"
+3. Name: "AnimalOps"
+4. Supported account types: "Accounts in any organizational directory and personal Microsoft accounts"
+5. Redirect URI: Select "Web" and enter `https://login.microsoftonline.com/common/oauth2/nativeclient`
+6. Click "Register"
+
+**Configure API Permissions:**
+1. Go to "API permissions"
+2. Click "Add a permission" → "Microsoft Graph" → "Delegated permissions"
+3. Add: `Files.ReadWrite`, `Files.ReadWrite.All`, `User.Read`
+4. Click "Add permissions"
+
+**Enable Public Client Flow:**
+1. Go to "Authentication"
+2. Scroll to "Advanced settings"
+3. Enable "Allow public client flows" → Yes
+4. Click "Save"
+
+**Get Access Token via Graph Explorer:**
+1. Go to [Microsoft Graph Explorer](https://developer.microsoft.com/en-us/graph/graph-explorer)
+2. Sign in with your Microsoft account
+3. Click "Modify permissions" (consent to required permissions)
+4. Make any test query (e.g., GET /me)
+5. Click "Access token" tab to view your token
+6. Copy the token (starts with "EwB..." or similar)
+
+**Note:** Microsoft Graph access tokens expire after ~1 hour. The app will prompt you to enter a new one when needed.
+
+### 5. Start Using AnimalOps
 
 1. Visit your deployed app
 2. Enter your Google Sheets Spreadsheet ID and access token
-3. Enter your Dropbox access token
+3. Choose either Dropbox or OneDrive and enter your access token for your chosen provider
 4. Click "Connect" on both services
 5. Start adding animal records!
 
@@ -82,7 +115,7 @@ Built specifically for nonprofit animal rescue organizations that need a simple,
 ```
 User Input → AnimalOps (Browser) → Google Sheets (animal data)
                                   ↓
-                              Dropbox (photos)
+                            Dropbox OR OneDrive (photos)
 ```
 
 1. **Animal Information** is saved as a row in your Google Sheet with columns for name, species, breed, age, intake date, health notes, and more
@@ -102,7 +135,7 @@ User Input → AnimalOps (Browser) → Google Sheets (animal data)
 - Photo Links (from Dropbox)
 - Photo Count
 
-**Dropbox (organized by animal ID):**
+**Dropbox or OneDrive (organized by animal ID):**
 ```
 /AnimalOps/
   ├── A1234567890/
@@ -126,9 +159,8 @@ User Input → AnimalOps (Browser) → Google Sheets (animal data)
 
 The application is designed with a modular architecture to easily support additional cloud storage providers:
 
-- [ ] OneDrive integration
-- [ ] Office 365 / Excel Online integration
-- [ ] Amazon S3 integration
+- [ ] Additional cloud storage providers (Box, AWS S3, etc.)
+- [ ] Office 365 / Excel Online integration (as alternative to Google Sheets)
 - [ ] Search and filter animals
 - [ ] Export reports
 - [ ] Medical record tracking

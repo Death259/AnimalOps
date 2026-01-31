@@ -588,7 +588,7 @@
         <!-- Setup Section -->
         <div class="card setup-section active" id="setupSection">
             <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin-bottom: 1rem;">Configuration</h2>
-            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Connect your cloud storage services to get started. Both services are required.</p>
+            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Connect your cloud storage services to get started. Google Sheets is required for data storage. Choose either Dropbox or OneDrive for photo storage.</p>
             
             <div class="config-grid">
                 <!-- Google Sheets Configuration -->
@@ -637,6 +637,37 @@
                             <span>📖 How to Get Token</span>
                         </button>
                     </div>
+                </div>
+
+                <!-- OneDrive Configuration -->
+                <div class="config-item" id="onedriveConfig">
+                    <h3>
+                        ☁️ OneDrive
+                        <span class="status-badge disconnected" id="onedriveStatus">Not Connected</span>
+                    </h3>
+                    <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
+                    
+                    <label for="onedriveToken">API Access Token</label>
+                    <input type="password" id="onedriveToken" placeholder="EwB...">
+                    
+                    <label for="onedriveFolder">Folder Path (optional)</label>
+                    <input type="text" id="onedriveFolder" placeholder="/AnimalOps" value="/AnimalOps">
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="connectOneDrive()">
+                            <span>Connect</span>
+                        </button>
+                        <button class="btn btn-outline" onclick="showHelp('onedrive')">
+                            <span>📖 How to Get Token</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 1rem;">
+                <span style="font-size: 1.2rem;">💡</span>
+                <div>
+                    <strong>Photo Storage:</strong> Choose either Dropbox or OneDrive for storing photos. You only need to connect one photo storage provider.
                 </div>
             </div>
 
@@ -723,7 +754,7 @@
             <div id="successMessage" class="alert alert-success hidden" style="margin-top: 1.5rem;">
                 <span style="font-size: 1.2rem;">✅</span>
                 <div>
-                    <strong>Success!</strong> Animal record has been saved to Google Sheets and photos uploaded to Dropbox.
+                    <strong>Success!</strong> Animal record has been saved to Google Sheets and photos uploaded to your cloud storage.
                 </div>
             </div>
         </div>
@@ -759,6 +790,11 @@
                 token: null
             },
             dropbox: {
+                connected: false,
+                token: null,
+                folder: '/AnimalOps'
+            },
+            onedrive: {
                 connected: false,
                 token: null,
                 folder: '/AnimalOps'
@@ -886,6 +922,11 @@
                     document.getElementById('dropboxStatus').className = 'status-badge connected';
                     document.getElementById('dropboxConfig').classList.add('connected');
                     
+                    // Disconnect OneDrive if connected
+                    if (config.onedrive.connected) {
+                        disconnectOneDrive();
+                    }
+                    
                     checkReadyState();
                 } else {
                     const error = await response.json();
@@ -896,8 +937,66 @@
             }
         }
 
+        // OneDrive Connection
+        async function connectOneDrive() {
+            const token = document.getElementById('onedriveToken').value.trim();
+            const folder = document.getElementById('onedriveFolder').value.trim() || '/AnimalOps';
+            
+            if (!token) {
+                alert('Please enter OneDrive Access Token');
+                return;
+            }
+
+            try {
+                // Test the connection by getting user info
+                const response = await fetch('https://graph.microsoft.com/v1.0/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    config.onedrive.connected = true;
+                    config.onedrive.token = token;
+                    config.onedrive.folder = folder;
+                    
+                    document.getElementById('onedriveStatus').textContent = 'Connected';
+                    document.getElementById('onedriveStatus').className = 'status-badge connected';
+                    document.getElementById('onedriveConfig').classList.add('connected');
+                    
+                    // Disconnect Dropbox if connected
+                    if (config.dropbox.connected) {
+                        disconnectDropbox();
+                    }
+                    
+                    checkReadyState();
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to connect to OneDrive: ${error.error.message || error.error}`);
+                }
+            } catch (error) {
+                alert(`Connection error: ${error.message}`);
+            }
+        }
+
+        function disconnectDropbox() {
+            config.dropbox.connected = false;
+            config.dropbox.token = null;
+            document.getElementById('dropboxStatus').textContent = 'Not Connected';
+            document.getElementById('dropboxStatus').className = 'status-badge disconnected';
+            document.getElementById('dropboxConfig').classList.remove('connected');
+        }
+
+        function disconnectOneDrive() {
+            config.onedrive.connected = false;
+            config.onedrive.token = null;
+            document.getElementById('onedriveStatus').textContent = 'Not Connected';
+            document.getElementById('onedriveStatus').className = 'status-badge disconnected';
+            document.getElementById('onedriveConfig').classList.remove('connected');
+        }
+
         function checkReadyState() {
-            if (config.sheets.connected && config.dropbox.connected) {
+            if (config.sheets.connected && (config.dropbox.connected || config.onedrive.connected)) {
                 document.getElementById('setupSection').classList.remove('active');
                 document.getElementById('formSection').classList.add('active');
             }
@@ -952,10 +1051,14 @@
                 const animalId = 'A' + Date.now();
                 const timestamp = new Date().toISOString();
                 
-                // Upload photos to Dropbox
+                // Upload photos to Dropbox or OneDrive
                 let photoLinks = [];
                 if (selectedPhotos.length > 0) {
-                    photoLinks = await uploadPhotosToDropbox(animalId, selectedPhotos);
+                    if (config.dropbox.connected) {
+                        photoLinks = await uploadPhotosToDropbox(animalId, selectedPhotos);
+                    } else if (config.onedrive.connected) {
+                        photoLinks = await uploadPhotosToOneDrive(animalId, selectedPhotos);
+                    }
                 }
                 
                 // Prepare data for Google Sheets
@@ -1047,6 +1150,91 @@
                     }
                 } catch {
                     links.push(uploadData.path_display);
+                }
+            }
+            
+            return links;
+        }
+
+        async function uploadPhotosToOneDrive(animalId, photos) {
+            const links = [];
+            
+            for (let i = 0; i < photos.length; i++) {
+                const file = photos[i];
+                const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
+                
+                // Create folder structure
+                const folderPath = config.onedrive.folder.replace(/^\//, '');
+                const animalFolder = folderPath ? `${folderPath}/${animalId}` : animalId;
+                
+                // Ensure folder exists
+                try {
+                    await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${animalFolder}:/children`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${config.onedrive.token}`
+                        }
+                    });
+                } catch {
+                    // Folder doesn't exist, create it
+                    await fetch(`https://graph.microsoft.com/v1.0/me/drive/root/children`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.onedrive.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: animalFolder,
+                            folder: {}
+                        })
+                    });
+                }
+                
+                // Upload file
+                const uploadPath = `${animalFolder}/${fileName}`;
+                const uploadResponse = await fetch(
+                    `https://graph.microsoft.com/v1.0/me/drive/root:/${uploadPath}:/content`,
+                    {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `Bearer ${config.onedrive.token}`,
+                            'Content-Type': file.type
+                        },
+                        body: file
+                    }
+                );
+                
+                if (!uploadResponse.ok) {
+                    throw new Error(`Failed to upload photo ${i + 1} to OneDrive`);
+                }
+                
+                const uploadData = await uploadResponse.json();
+                
+                // Create sharing link
+                try {
+                    const shareResponse = await fetch(
+                        `https://graph.microsoft.com/v1.0/me/drive/items/${uploadData.id}/createLink`,
+                        {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${config.onedrive.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                type: 'view',
+                                scope: 'anonymous'
+                            })
+                        }
+                    );
+                    
+                    if (shareResponse.ok) {
+                        const shareData = await shareResponse.json();
+                        links.push(shareData.link.webUrl);
+                    } else {
+                        links.push(uploadData.webUrl);
+                    }
+                } catch {
+                    links.push(uploadData.webUrl);
                 }
             }
             
@@ -1195,18 +1383,87 @@
                         </div>
                     </div>
                 `;
+            } else if (section === 'onedrive') {
+                content.innerHTML = `
+                    <div class="help-section">
+                        <h3>🔑 Getting a OneDrive API Token</h3>
+                        <p>Follow these steps to get your OneDrive/Microsoft Graph access token:</p>
+                        
+                        <ol>
+                            <li><strong>Register an Application</strong>
+                                <ul>
+                                    <li>Go to <a href="https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank">Azure Portal - App Registrations</a></li>
+                                    <li>Click "New registration"</li>
+                                    <li>Name: "AnimalOps" (or your choice)</li>
+                                    <li>Supported account types: "Accounts in any organizational directory and personal Microsoft accounts"</li>
+                                    <li>Redirect URI: Select "Web" and enter <code>https://login.microsoftonline.com/common/oauth2/nativeclient</code></li>
+                                    <li>Click "Register"</li>
+                                </ul>
+                            </li>
+                            <li><strong>Configure API Permissions</strong>
+                                <ul>
+                                    <li>In your app, go to "API permissions"</li>
+                                    <li>Click "Add a permission" → "Microsoft Graph" → "Delegated permissions"</li>
+                                    <li>Add these permissions:
+                                        <ul>
+                                            <li><code>Files.ReadWrite</code></li>
+                                            <li><code>Files.ReadWrite.All</code></li>
+                                            <li><code>User.Read</code></li>
+                                        </ul>
+                                    </li>
+                                    <li>Click "Add permissions"</li>
+                                </ul>
+                            </li>
+                            <li><strong>Enable Public Client Flow</strong>
+                                <ul>
+                                    <li>Go to "Authentication"</li>
+                                    <li>Scroll to "Advanced settings"</li>
+                                    <li>Enable "Allow public client flows" → Yes</li>
+                                    <li>Click "Save"</li>
+                                </ul>
+                            </li>
+                            <li><strong>Get Your Application (Client) ID</strong>
+                                <ul>
+                                    <li>Go to "Overview"</li>
+                                    <li>Copy the "Application (client) ID"</li>
+                                </ul>
+                            </li>
+                            <li><strong>Get Access Token via Graph Explorer</strong>
+                                <ul>
+                                    <li>Go to <a href="https://developer.microsoft.com/en-us/graph/graph-explorer" target="_blank">Microsoft Graph Explorer</a></li>
+                                    <li>Sign in with your Microsoft account</li>
+                                    <li>Click "Modify permissions" (consent to required permissions)</li>
+                                    <li>Make any test query (e.g., GET /me)</li>
+                                    <li>Click "Access token" tab to view your token</li>
+                                    <li>Copy the token (starts with "EwB..." or similar)</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <div><strong>Note:</strong> Microsoft Graph access tokens expire after 1 hour. You'll need to generate a new one when it expires. For longer-term use, consider implementing refresh token flow.</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <span>💡</span>
+                            <div><strong>Alternative Method:</strong> You can also use tools like Postman or write a small script to obtain tokens programmatically using the OAuth 2.0 authorization code flow.</div>
+                        </div>
+                    </div>
+                `;
             } else {
                 content.innerHTML = `
                     <div class="help-section">
                         <h3>📖 Welcome to AnimalOps</h3>
-                        <p>AnimalOps helps animal rescue organizations manage their rescue operations by storing animal information in Google Sheets and photos in Dropbox.</p>
+                        <p>AnimalOps helps animal rescue organizations manage their rescue operations by storing animal information in Google Sheets and photos in Dropbox or OneDrive.</p>
                     </div>
                     
                     <div class="help-section">
                         <h3>🚀 Getting Started</h3>
                         <ol>
                             <li>Set up your Google Sheets spreadsheet and get an API token</li>
-                            <li>Create a Dropbox app and get an access token</li>
+                            <li>Choose either Dropbox or OneDrive for photo storage</li>
+                            <li>Create an app and get an access token for your chosen storage provider</li>
                             <li>Connect both services in the Configuration section</li>
                             <li>Start adding animal records!</li>
                         </ol>
@@ -1216,10 +1473,11 @@
                         <h3>💡 Features</h3>
                         <ul>
                             <li><strong>Data Storage:</strong> All animal information is stored in Google Sheets, making it easy to view, sort, and analyze</li>
-                            <li><strong>Photo Storage:</strong> Photos are uploaded to Dropbox with organized folder structure</li>
+                            <li><strong>Photo Storage:</strong> Photos are uploaded to your choice of Dropbox or OneDrive with organized folder structure</li>
                             <li><strong>Unique IDs:</strong> Each animal gets a unique identifier for tracking</li>
                             <li><strong>Direct Links:</strong> Photo links are saved in the spreadsheet for easy access</li>
                             <li><strong>Privacy:</strong> Your API tokens are stored only in your browser session</li>
+                            <li><strong>Flexible:</strong> Use the cloud storage provider you already have</li>
                         </ul>
                     </div>
                     
@@ -1227,10 +1485,10 @@
                         <h3>🔮 Future Enhancements</h3>
                         <p>This application is designed to be extensible. Future versions may support:</p>
                         <ul>
-                            <li>OneDrive / Office 365 integration</li>
                             <li>Additional cloud storage providers</li>
                             <li>Search and filtering capabilities</li>
                             <li>Export and reporting features</li>
+                            <li>Medical record tracking</li>
                         </ul>
                     </div>
                     
