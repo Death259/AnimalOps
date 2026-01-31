@@ -9,6 +9,7 @@ A free, open-source web application designed specifically for animal rescue orga
 - 📊 **Google Sheets Integration** - Store all animal records in a spreadsheet for easy viewing, sorting, and analysis
 - 📦 **Dropbox Photo Storage** - Upload and organize animal photos with shareable links
 - ☁️ **OneDrive Photo Storage** - Alternative option for Microsoft users to store photos
+- 💾 **Google Drive Photo Storage** - Perfect for organizations already using Google Workspace
 - 🆔 **Unique Animal IDs** - Automatically generated tracking IDs for each rescue
 - 🔒 **Privacy-First** - API tokens stored only in your browser session, never on any server
 - 📱 **Mobile Friendly** - Works great on phones and tablets for field use
@@ -17,7 +18,7 @@ A free, open-source web application designed specifically for animal rescue orga
 
 ## Why AnimalOps?
 
-Built specifically for nonprofit animal rescue organizations that need a simple, cost-effective way to track rescued animals without expensive specialized software. If you already use Google Sheets and either Dropbox or OneDrive, you can start using AnimalOps immediately at no additional cost.
+Built specifically for nonprofit animal rescue organizations that need a simple, cost-effective way to track rescued animals without expensive specialized software. If you already use Google Sheets and Dropbox, OneDrive, or Google Drive, you can start using AnimalOps immediately at no additional cost.
 
 ## Quick Start
 
@@ -100,11 +101,40 @@ Built specifically for nonprofit animal rescue organizations that need a simple,
 
 **Note:** Microsoft Graph access tokens expire after ~1 hour. The app will prompt you to enter a new one when needed.
 
-### 5. Start Using AnimalOps
+### 5. Set Up Google Drive (Option 3 for Photo Storage)
+
+**Use Same Google Cloud Project:**
+1. If you already created a project for Google Sheets, use that same project
+2. Otherwise, go to [Google Cloud Console](https://console.cloud.google.com) and create a new project
+
+**Enable Google Drive API:**
+1. In your project, go to "APIs & Services" → "Library"
+2. Search for "Google Drive API" and click "Enable"
+
+**Use Existing OAuth Credentials:**
+1. If you created credentials for Google Sheets, you can use the same ones
+2. Go to "APIs & Services" → "Credentials"
+3. You should see your existing OAuth 2.0 Client ID
+
+**Get Access Token via OAuth Playground:**
+1. Go to [OAuth 2.0 Playground](https://developers.google.com/oauthplayground)
+2. Click the settings gear icon (top right)
+3. Check "Use your own OAuth credentials"
+4. Enter your Client ID and Client Secret
+5. In Step 1, select "Drive API v3" → `https://www.googleapis.com/auth/drive.file`
+6. Click "Authorize APIs" and sign in
+7. In Step 2, click "Exchange authorization code for tokens"
+8. Copy the **Access token** (starts with "ya29...")
+
+**Note:** Google Drive access tokens expire after ~1 hour, just like Google Sheets tokens.
+
+**Tip:** Using Google Drive with Google Sheets means everything stays in one Google ecosystem - perfect for organizations already using Google Workspace!
+
+### 6. Start Using AnimalOps
 
 1. Visit your deployed app
 2. Enter your Google Sheets Spreadsheet ID and access token
-3. Choose either Dropbox or OneDrive and enter your access token for your chosen provider
+3. Choose Dropbox, OneDrive, or Google Drive and enter your access token for your chosen provider
 4. Click "Connect" on both services
 5. Start adding animal records!
 
@@ -115,12 +145,12 @@ Built specifically for nonprofit animal rescue organizations that need a simple,
 ```
 User Input → AnimalOps (Browser) → Google Sheets (animal data)
                                   ↓
-                            Dropbox OR OneDrive (photos)
+                    Dropbox OR OneDrive OR Google Drive (photos)
 ```
 
 1. **Animal Information** is saved as a row in your Google Sheet with columns for name, species, breed, age, intake date, health notes, and more
-2. **Photos** are uploaded to Dropbox in organized folders (one folder per animal ID)
-3. **Photo Links** from Dropbox are saved in the Google Sheet for easy reference
+2. **Photos** are uploaded to your chosen cloud storage provider in organized folders (one folder per animal ID)
+3. **Photo Links** from your cloud storage are saved in the Google Sheet for easy reference
 
 ### What Gets Stored Where
 
@@ -135,7 +165,7 @@ User Input → AnimalOps (Browser) → Google Sheets (animal data)
 - Photo Links (from Dropbox)
 - Photo Count
 
-**Dropbox or OneDrive (organized by animal ID):**
+**Dropbox, OneDrive, or Google Drive (organized by animal ID):**
 ```
 /AnimalOps/
   ├── A1234567890/

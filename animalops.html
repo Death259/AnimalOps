@@ -588,7 +588,7 @@
         <!-- Setup Section -->
         <div class="card setup-section active" id="setupSection">
             <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin-bottom: 1rem;">Configuration</h2>
-            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Connect your cloud storage services to get started. Google Sheets is required for data storage. Choose either Dropbox or OneDrive for photo storage.</p>
+            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Connect your cloud storage services to get started. Google Sheets is required for data storage. Choose Dropbox, OneDrive, or Google Drive for photo storage.</p>
             
             <div class="config-grid">
                 <!-- Google Sheets Configuration -->
@@ -662,12 +662,36 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Google Drive Configuration -->
+                <div class="config-item" id="driveConfig">
+                    <h3>
+                        💾 Google Drive
+                        <span class="status-badge disconnected" id="driveStatus">Not Connected</span>
+                    </h3>
+                    <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
+                    
+                    <label for="driveToken">API Access Token</label>
+                    <input type="password" id="driveToken" placeholder="ya29.a0...">
+                    
+                    <label for="driveFolder">Folder Name (optional)</label>
+                    <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
+                    
+                    <div class="button-group">
+                        <button class="btn btn-primary" onclick="connectGoogleDrive()">
+                            <span>Connect</span>
+                        </button>
+                        <button class="btn btn-outline" onclick="showHelp('drive')">
+                            <span>📖 How to Get Token</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="alert alert-info" style="margin-top: 1rem;">
                 <span style="font-size: 1.2rem;">💡</span>
                 <div>
-                    <strong>Photo Storage:</strong> Choose either Dropbox or OneDrive for storing photos. You only need to connect one photo storage provider.
+                    <strong>Photo Storage:</strong> Choose Dropbox, OneDrive, or Google Drive for storing photos. You only need to connect one photo storage provider.
                 </div>
             </div>
 
@@ -798,6 +822,12 @@
                 connected: false,
                 token: null,
                 folder: '/AnimalOps'
+            },
+            drive: {
+                connected: false,
+                token: null,
+                folder: 'AnimalOps',
+                folderId: null
             }
         };
 
@@ -922,9 +952,12 @@
                     document.getElementById('dropboxStatus').className = 'status-badge connected';
                     document.getElementById('dropboxConfig').classList.add('connected');
                     
-                    // Disconnect OneDrive if connected
+                    // Disconnect other photo storage providers
                     if (config.onedrive.connected) {
                         disconnectOneDrive();
+                    }
+                    if (config.drive.connected) {
+                        disconnectGoogleDrive();
                     }
                     
                     checkReadyState();
@@ -964,9 +997,12 @@
                     document.getElementById('onedriveStatus').className = 'status-badge connected';
                     document.getElementById('onedriveConfig').classList.add('connected');
                     
-                    // Disconnect Dropbox if connected
+                    // Disconnect other photo storage providers
                     if (config.dropbox.connected) {
                         disconnectDropbox();
+                    }
+                    if (config.drive.connected) {
+                        disconnectGoogleDrive();
                     }
                     
                     checkReadyState();
@@ -976,6 +1012,92 @@
                 }
             } catch (error) {
                 alert(`Connection error: ${error.message}`);
+            }
+        }
+
+        // Google Drive Connection
+        async function connectGoogleDrive() {
+            const token = document.getElementById('driveToken').value.trim();
+            const folderName = document.getElementById('driveFolder').value.trim() || 'AnimalOps';
+            
+            if (!token) {
+                alert('Please enter Google Drive Access Token');
+                return;
+            }
+
+            try {
+                // Test the connection
+                const response = await fetch('https://www.googleapis.com/drive/v3/about?fields=user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    config.drive.connected = true;
+                    config.drive.token = token;
+                    config.drive.folder = folderName;
+                    
+                    // Create or find the main folder
+                    await ensureDriveFolder(folderName);
+                    
+                    document.getElementById('driveStatus').textContent = 'Connected';
+                    document.getElementById('driveStatus').className = 'status-badge connected';
+                    document.getElementById('driveConfig').classList.add('connected');
+                    
+                    // Disconnect other photo storage providers
+                    if (config.dropbox.connected) {
+                        disconnectDropbox();
+                    }
+                    if (config.onedrive.connected) {
+                        disconnectOneDrive();
+                    }
+                    
+                    checkReadyState();
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to connect to Google Drive: ${error.error.message}`);
+                }
+            } catch (error) {
+                alert(`Connection error: ${error.message}`);
+            }
+        }
+
+        async function ensureDriveFolder(folderName) {
+            try {
+                // Search for existing folder
+                const searchResponse = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=name='${folderName}' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+                
+                const searchData = await searchResponse.json();
+                
+                if (searchData.files && searchData.files.length > 0) {
+                    config.drive.folderId = searchData.files[0].id;
+                } else {
+                    // Create folder
+                    const createResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: folderName,
+                            mimeType: 'application/vnd.google-apps.folder'
+                        })
+                    });
+                    
+                    const createData = await createResponse.json();
+                    config.drive.folderId = createData.id;
+                }
+            } catch (error) {
+                console.error('Error ensuring Drive folder:', error);
             }
         }
 
@@ -995,8 +1117,17 @@
             document.getElementById('onedriveConfig').classList.remove('connected');
         }
 
+        function disconnectGoogleDrive() {
+            config.drive.connected = false;
+            config.drive.token = null;
+            config.drive.folderId = null;
+            document.getElementById('driveStatus').textContent = 'Not Connected';
+            document.getElementById('driveStatus').className = 'status-badge disconnected';
+            document.getElementById('driveConfig').classList.remove('connected');
+        }
+
         function checkReadyState() {
-            if (config.sheets.connected && (config.dropbox.connected || config.onedrive.connected)) {
+            if (config.sheets.connected && (config.dropbox.connected || config.onedrive.connected || config.drive.connected)) {
                 document.getElementById('setupSection').classList.remove('active');
                 document.getElementById('formSection').classList.add('active');
             }
@@ -1051,13 +1182,15 @@
                 const animalId = 'A' + Date.now();
                 const timestamp = new Date().toISOString();
                 
-                // Upload photos to Dropbox or OneDrive
+                // Upload photos to Dropbox, OneDrive, or Google Drive
                 let photoLinks = [];
                 if (selectedPhotos.length > 0) {
                     if (config.dropbox.connected) {
                         photoLinks = await uploadPhotosToDropbox(animalId, selectedPhotos);
                     } else if (config.onedrive.connected) {
                         photoLinks = await uploadPhotosToOneDrive(animalId, selectedPhotos);
+                    } else if (config.drive.connected) {
+                        photoLinks = await uploadPhotosToGoogleDrive(animalId, selectedPhotos);
                     }
                 }
                 
@@ -1236,6 +1369,125 @@
                 } catch {
                     links.push(uploadData.webUrl);
                 }
+            }
+            
+            return links;
+        }
+
+        async function uploadPhotosToGoogleDrive(animalId, photos) {
+            const links = [];
+            
+            // Create animal-specific folder
+            let animalFolderId;
+            try {
+                // Search for existing animal folder
+                const searchResponse = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=name='${animalId}' and '${config.drive.folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+                
+                const searchData = await searchResponse.json();
+                
+                if (searchData.files && searchData.files.length > 0) {
+                    animalFolderId = searchData.files[0].id;
+                } else {
+                    // Create animal folder
+                    const createFolderResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: animalId,
+                            mimeType: 'application/vnd.google-apps.folder',
+                            parents: [config.drive.folderId]
+                        })
+                    });
+                    
+                    const folderData = await createFolderResponse.json();
+                    animalFolderId = folderData.id;
+                }
+            } catch (error) {
+                throw new Error(`Failed to create folder for animal ${animalId}`);
+            }
+            
+            // Upload each photo
+            for (let i = 0; i < photos.length; i++) {
+                const file = photos[i];
+                const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
+                
+                // Create metadata
+                const metadata = {
+                    name: fileName,
+                    parents: [animalFolderId]
+                };
+                
+                // Create multipart upload
+                const boundary = '-------314159265358979323846';
+                const delimiter = "\r\n--" + boundary + "\r\n";
+                const closeDelim = "\r\n--" + boundary + "--";
+                
+                const reader = new FileReader();
+                const base64Data = await new Promise((resolve) => {
+                    reader.onloadend = () => {
+                        const base64 = reader.result.split(',')[1];
+                        resolve(base64);
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                const multipartRequestBody =
+                    delimiter +
+                    'Content-Type: application/json\r\n\r\n' +
+                    JSON.stringify(metadata) +
+                    delimiter +
+                    'Content-Type: ' + file.type + '\r\n' +
+                    'Content-Transfer-Encoding: base64\r\n' +
+                    '\r\n' +
+                    base64Data +
+                    closeDelim;
+                
+                const uploadResponse = await fetch(
+                    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`,
+                            'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+                        },
+                        body: multipartRequestBody
+                    }
+                );
+                
+                if (!uploadResponse.ok) {
+                    throw new Error(`Failed to upload photo ${i + 1} to Google Drive`);
+                }
+                
+                const uploadData = await uploadResponse.json();
+                
+                // Make file publicly viewable
+                try {
+                    await fetch(`https://www.googleapis.com/drive/v3/files/${uploadData.id}/permissions`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            role: 'reader',
+                            type: 'anyone'
+                        })
+                    });
+                } catch {
+                    // Permission setting failed, but we still have the file
+                }
+                
+                links.push(uploadData.webViewLink || uploadData.webContentLink);
             }
             
             return links;
@@ -1451,18 +1703,69 @@
                         </div>
                     </div>
                 `;
+            } else if (section === 'drive') {
+                content.innerHTML = `
+                    <div class="help-section">
+                        <h3>🔑 Getting a Google Drive API Token</h3>
+                        <p>Follow these steps to get your Google Drive access token:</p>
+                        
+                        <ol>
+                            <li><strong>Use the Same Google Cloud Project</strong>
+                                <ul>
+                                    <li>If you already created a project for Google Sheets, use that same project</li>
+                                    <li>Otherwise, go to <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a> and create a new project</li>
+                                </ul>
+                            </li>
+                            <li><strong>Enable Google Drive API</strong>
+                                <ul>
+                                    <li>In your project, go to "APIs & Services" → "Library"</li>
+                                    <li>Search for "Google Drive API" and click "Enable"</li>
+                                </ul>
+                            </li>
+                            <li><strong>Use Existing OAuth Credentials</strong>
+                                <ul>
+                                    <li>If you created credentials for Google Sheets, you can use the same ones</li>
+                                    <li>Go to "APIs & Services" → "Credentials"</li>
+                                    <li>You should see your existing OAuth 2.0 Client ID</li>
+                                </ul>
+                            </li>
+                            <li><strong>Get Access Token via OAuth Playground</strong>
+                                <ul>
+                                    <li>Go to <a href="https://developers.google.com/oauthplayground" target="_blank">OAuth 2.0 Playground</a></li>
+                                    <li>Click the settings gear icon (top right)</li>
+                                    <li>Check "Use your own OAuth credentials"</li>
+                                    <li>Enter your Client ID and Client Secret</li>
+                                    <li>In Step 1, select "Drive API v3" → <code>https://www.googleapis.com/auth/drive.file</code></li>
+                                    <li>Click "Authorize APIs" and sign in</li>
+                                    <li>In Step 2, click "Exchange authorization code for tokens"</li>
+                                    <li>Copy the <strong>Access token</strong> (starts with "ya29...")</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        
+                        <div class="alert alert-info">
+                            <span>💡</span>
+                            <div><strong>Tip:</strong> If you're already using Google Sheets in AnimalOps, you can use the same Google account and project! This makes it even easier to manage all your animal data in one Google ecosystem.</div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <span>⚠️</span>
+                            <div><strong>Note:</strong> Access tokens expire after about 1 hour. You'll need to generate a new one when it expires, just like with Google Sheets.</div>
+                        </div>
+                    </div>
+                `;
             } else {
                 content.innerHTML = `
                     <div class="help-section">
                         <h3>📖 Welcome to AnimalOps</h3>
-                        <p>AnimalOps helps animal rescue organizations manage their rescue operations by storing animal information in Google Sheets and photos in Dropbox or OneDrive.</p>
+                        <p>AnimalOps helps animal rescue organizations manage their rescue operations by storing animal information in Google Sheets and photos in Dropbox, OneDrive, or Google Drive.</p>
                     </div>
                     
                     <div class="help-section">
                         <h3>🚀 Getting Started</h3>
                         <ol>
                             <li>Set up your Google Sheets spreadsheet and get an API token</li>
-                            <li>Choose either Dropbox or OneDrive for photo storage</li>
+                            <li>Choose Dropbox, OneDrive, or Google Drive for photo storage</li>
                             <li>Create an app and get an access token for your chosen storage provider</li>
                             <li>Connect both services in the Configuration section</li>
                             <li>Start adding animal records!</li>
@@ -1473,7 +1776,7 @@
                         <h3>💡 Features</h3>
                         <ul>
                             <li><strong>Data Storage:</strong> All animal information is stored in Google Sheets, making it easy to view, sort, and analyze</li>
-                            <li><strong>Photo Storage:</strong> Photos are uploaded to your choice of Dropbox or OneDrive with organized folder structure</li>
+                            <li><strong>Photo Storage:</strong> Photos are uploaded to your choice of Dropbox, OneDrive, or Google Drive with organized folder structure</li>
                             <li><strong>Unique IDs:</strong> Each animal gets a unique identifier for tracking</li>
                             <li><strong>Direct Links:</strong> Photo links are saved in the spreadsheet for easy access</li>
                             <li><strong>Privacy:</strong> Your API tokens are stored only in your browser session</li>
