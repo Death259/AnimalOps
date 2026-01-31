@@ -79,8 +79,8 @@
         .logo {
             width: 64px;
             height: 64px;
-            background: var(--accent);
-            border-radius: 16px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -90,13 +90,15 @@
             color: white;
             box-shadow: 0 4px 16px rgba(0,0,0,0.2);
             position: relative;
-            overflow: hidden;
+            overflow: visible;
+            border: 3px solid var(--accent);
         }
 
         .logo svg {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             fill: white;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
 
         h1 {
@@ -567,13 +569,65 @@
             <div class="logo-container">
                 <div class="logo">
                     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                        <!-- Paw print logo -->
-                        <ellipse cx="50" cy="65" rx="18" ry="22" fill="white"/>
-                        <circle cx="35" cy="35" r="10" fill="white"/>
-                        <circle cx="50" cy="28" r="10" fill="white"/>
-                        <circle cx="65" cy="35" r="10" fill="white"/>
-                        <circle cx="75" cy="50" r="8" fill="white"/>
-                        <circle cx="25" cy="50" r="8" fill="white"/>
+                        <!-- Police badge shield shape -->
+                        <defs>
+                            <linearGradient id="badgeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFB84D;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#F7941D;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        
+                        <!-- Badge shield outline -->
+                        <path d="M 50 5 
+                                 L 75 15 
+                                 L 85 25
+                                 L 90 45
+                                 L 85 65
+                                 L 75 80
+                                 L 50 95
+                                 L 25 80
+                                 L 15 65
+                                 L 10 45
+                                 L 15 25
+                                 L 25 15
+                                 Z" 
+                              fill="url(#badgeGradient)" 
+                              stroke="white" 
+                              stroke-width="2"/>
+                        
+                        <!-- Inner badge detail -->
+                        <path d="M 50 12 
+                                 L 70 20 
+                                 L 78 30
+                                 L 82 45
+                                 L 78 60
+                                 L 70 73
+                                 L 50 85
+                                 L 30 73
+                                 L 22 60
+                                 L 18 45
+                                 L 22 30
+                                 L 30 20
+                                 Z" 
+                              fill="none" 
+                              stroke="white" 
+                              stroke-width="1.5"
+                              opacity="0.4"/>
+                        
+                        <!-- Paw print in center -->
+                        <g transform="translate(50, 50) scale(0.5)">
+                            <!-- Main paw pad -->
+                            <ellipse cx="0" cy="10" rx="16" ry="20" fill="white"/>
+                            <!-- Top left toe -->
+                            <circle cx="-18" cy="-10" r="9" fill="white"/>
+                            <!-- Top center toe -->
+                            <circle cx="0" cy="-14" r="9" fill="white"/>
+                            <!-- Top right toe -->
+                            <circle cx="18" cy="-10" r="9" fill="white"/>
+                            <!-- Side toe -->
+                            <circle cx="25" cy="5" r="7" fill="white"/>
+                            <circle cx="-25" cy="5" r="7" fill="white"/>
+                        </g>
                     </svg>
                 </div>
                 <div>
@@ -587,118 +641,138 @@
     <div class="container">
         <!-- Setup Section -->
         <div class="card setup-section active" id="setupSection">
-            <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin-bottom: 1rem;">Configuration</h2>
-            <p style="color: var(--text-light); margin-bottom: 1.5rem;">Connect your cloud storage services to get started. Google Sheets is required for data storage. Choose Dropbox, OneDrive, or Google Drive for photo storage.</p>
+            <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin-bottom: 0.5rem;">Configuration</h2>
+            <p style="color: var(--text-light); margin-bottom: 2rem;">Connect one service from each section below to get started.</p>
             
-            <div class="config-grid">
-                <!-- Google Sheets Configuration -->
-                <div class="config-item" id="sheetsConfig">
-                    <h3>
-                        📊 Google Sheets
-                        <span class="status-badge disconnected" id="sheetsStatus">Not Connected</span>
-                    </h3>
-                    <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data and records</p>
-                    
-                    <label for="sheetsId">Spreadsheet ID</label>
-                    <input type="text" id="sheetsId" placeholder="1ABC...xyz">
-                    
-                    <label for="sheetsToken">API Access Token</label>
-                    <input type="password" id="sheetsToken" placeholder="ya29.a0...">
-                    
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="connectGoogleSheets()">
-                            <span>Connect</span>
-                        </button>
-                        <button class="btn btn-outline" onclick="showHelp('sheets')">
-                            <span>📖 How to Get Token</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Dropbox Configuration -->
-                <div class="config-item" id="dropboxConfig">
-                    <h3>
-                        📦 Dropbox
-                        <span class="status-badge disconnected" id="dropboxStatus">Not Connected</span>
-                    </h3>
-                    <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
-                    
-                    <label for="dropboxToken">API Access Token</label>
-                    <input type="password" id="dropboxToken" placeholder="sl.B...">
-                    
-                    <label for="dropboxFolder">Folder Path (optional)</label>
-                    <input type="text" id="dropboxFolder" placeholder="/AnimalOps" value="/AnimalOps">
-                    
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="connectDropbox()">
-                            <span>Connect</span>
-                        </button>
-                        <button class="btn btn-outline" onclick="showHelp('dropbox')">
-                            <span>📖 How to Get Token</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- OneDrive Configuration -->
-                <div class="config-item" id="onedriveConfig">
-                    <h3>
-                        ☁️ OneDrive
-                        <span class="status-badge disconnected" id="onedriveStatus">Not Connected</span>
-                    </h3>
-                    <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
-                    
-                    <label for="onedriveToken">API Access Token</label>
-                    <input type="password" id="onedriveToken" placeholder="EwB...">
-                    
-                    <label for="onedriveFolder">Folder Path (optional)</label>
-                    <input type="text" id="onedriveFolder" placeholder="/AnimalOps" value="/AnimalOps">
-                    
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="connectOneDrive()">
-                            <span>Connect</span>
-                        </button>
-                        <button class="btn btn-outline" onclick="showHelp('onedrive')">
-                            <span>📖 How to Get Token</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Google Drive Configuration -->
-                <div class="config-item" id="driveConfig">
-                    <h3>
-                        💾 Google Drive
-                        <span class="status-badge disconnected" id="driveStatus">Not Connected</span>
-                    </h3>
-                    <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
-                    
-                    <label for="driveToken">API Access Token</label>
-                    <input type="password" id="driveToken" placeholder="ya29.a0...">
-                    
-                    <label for="driveFolder">Folder Name (optional)</label>
-                    <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
-                    
-                    <div class="button-group">
-                        <button class="btn btn-primary" onclick="connectGoogleDrive()">
-                            <span>Connect</span>
-                        </button>
-                        <button class="btn btn-outline" onclick="showHelp('drive')">
-                            <span>📖 How to Get Token</span>
-                        </button>
+            <!-- Data Storage Section -->
+            <div style="margin-bottom: 2.5rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    📊 Data Storage
+                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One - Required)</span>
+                </h3>
+                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal records and information</p>
+                
+                <div class="config-grid">
+                    <!-- Google Sheets Configuration -->
+                    <div class="config-item" id="sheetsConfig">
+                        <h3>
+                            📊 Google Sheets
+                            <span class="status-badge disconnected" id="sheetsStatus">Not Connected</span>
+                        </h3>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data and records</p>
+                        
+                        <label for="sheetsId">Spreadsheet ID</label>
+                        <input type="text" id="sheetsId" placeholder="1ABC...xyz">
+                        
+                        <label for="sheetsToken">API Access Token</label>
+                        <input type="password" id="sheetsToken" placeholder="ya29.a0...">
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="connectGoogleSheets()">
+                                <span>Connect</span>
+                            </button>
+                            <button class="btn btn-outline" onclick="showHelp('sheets')">
+                                <span>📖 How to Get Token</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div class="alert alert-info" style="margin-top: 1rem;">
-                <span style="font-size: 1.2rem;">💡</span>
-                <div>
-                    <strong>Photo Storage:</strong> Choose Dropbox, OneDrive, or Google Drive for storing photos. You only need to connect one photo storage provider.
+            <!-- Photo Storage Section -->
+            <div>
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    📸 Photo Storage
+                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One - Required)</span>
+                </h3>
+                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal photos and images</p>
+                
+                <div class="config-grid">
+                    <!-- Dropbox Configuration -->
+                    <div class="config-item" id="dropboxConfig">
+                        <h3>
+                            📦 Dropbox
+                            <span class="status-badge disconnected" id="dropboxStatus">Not Connected</span>
+                        </h3>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
+                        
+                        <label for="dropboxToken">API Access Token</label>
+                        <input type="password" id="dropboxToken" placeholder="sl.B...">
+                        
+                        <label for="dropboxFolder">Folder Path (optional)</label>
+                        <input type="text" id="dropboxFolder" placeholder="/AnimalOps" value="/AnimalOps">
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="connectDropbox()">
+                                <span>Connect</span>
+                            </button>
+                            <button class="btn btn-outline" onclick="showHelp('dropbox')">
+                                <span>📖 How to Get Token</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- OneDrive Configuration -->
+                    <div class="config-item" id="onedriveConfig">
+                        <h3>
+                            ☁️ OneDrive
+                            <span class="status-badge disconnected" id="onedriveStatus">Not Connected</span>
+                        </h3>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
+                        
+                        <label for="onedriveToken">API Access Token</label>
+                        <input type="password" id="onedriveToken" placeholder="EwB...">
+                        
+                        <label for="onedriveFolder">Folder Path (optional)</label>
+                        <input type="text" id="onedriveFolder" placeholder="/AnimalOps" value="/AnimalOps">
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="connectOneDrive()">
+                                <span>Connect</span>
+                            </button>
+                            <button class="btn btn-outline" onclick="showHelp('onedrive')">
+                                <span>📖 How to Get Token</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Google Drive Configuration -->
+                    <div class="config-item" id="driveConfig">
+                        <h3>
+                            💾 Google Drive
+                            <span class="status-badge disconnected" id="driveStatus">Not Connected</span>
+                        </h3>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
+                        
+                        <label for="driveToken">API Access Token</label>
+                        <input type="password" id="driveToken" placeholder="ya29.a0...">
+                        
+                        <label for="driveFolder">Folder Name (optional)</label>
+                        <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
+                        
+                        <div class="button-group">
+                            <button class="btn btn-primary" onclick="connectGoogleDrive()">
+                                <span>Connect</span>
+                            </button>
+                            <button class="btn btn-outline" onclick="showHelp('drive')">
+                                <span>📖 How to Get Token</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="alert alert-info" style="margin-top: 2rem;">
                 <span style="font-size: 1.2rem;">ℹ️</span>
                 <div>
-                    <strong>Privacy Note:</strong> Your API tokens are stored only in your browser's session and are never sent to any server except Google and Dropbox directly. They will be cleared when you close this tab.
+                    <strong>Setup Requirements:</strong> Connect <strong>one service from Data Storage</strong> (Google Sheets) and <strong>one service from Photo Storage</strong> (Dropbox, OneDrive, or Google Drive). Both are required to use AnimalOps.
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 1rem;">
+                <span style="font-size: 1.2rem;">🔒</span>
+                <div>
+                    <strong>Privacy Note:</strong> Your API tokens are stored only in your browser's session and are never sent to any server except Google and your chosen photo storage provider directly. They will be cleared when you close this tab.
                 </div>
             </div>
         </div>
