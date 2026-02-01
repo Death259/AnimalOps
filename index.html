@@ -1561,7 +1561,8 @@
             }
             
             const printContainer = document.getElementById('printContainer');
-            printContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">Preparing print pages...</p>';
+            printContainer.style.display = 'block';
+            printContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">Preparing print pages and fetching photos...</p>';
             
             let pagesHTML = '';
             
@@ -1569,7 +1570,7 @@
                 // Create cover page for this animal
                 pagesHTML += `
                     <div class="print-page print-cover">
-                        <h1>${record.name}</h1>
+                        <h1>${record.name || 'Unknown'}</h1>
                         
                         <div class="print-info-grid">
                             <div class="print-info-item">
@@ -1640,34 +1641,81 @@
                 `;
                 
                 // Add photo pages if there are photos
-                if (record.photoLinks) {
-                    const photoUrls = record.photoLinks.split(', ').filter(url => url.trim());
+                if (record.photoLinks && record.photoLinks.trim()) {
+                    const photoUrls = record.photoLinks.split(',').map(url => url.trim()).filter(url => url);
                     
                     for (let i = 0; i < photoUrls.length; i++) {
-                        const photoUrl = photoUrls[i].trim();
+                        let photoUrl = photoUrls[i];
+                        
+                        // Handle Dropbox paths - fetch temporary link
+                        if (photoUrl.startsWith('DROPBOX:')) {
+                            const dropboxPath = photoUrl.replace('DROPBOX:', '');
+                            try {
+                                const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Authorization': `Bearer ${config.dropbox.token}`,
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        path: dropboxPath
+                                    })
+                                });
+                                
+                                if (tempLinkResponse.ok) {
+                                    const tempLinkData = await tempLinkResponse.json();
+                                    photoUrl = tempLinkData.link;
+                                }
+                            } catch (error) {
+                                console.error('Error fetching Dropbox temp link:', error);
+                            }
+                        }
+                        // Convert regular Dropbox URLs
+                        else if (photoUrl.includes('dropbox.com')) {
+                            photoUrl = photoUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+                            photoUrl = photoUrl.replace('?dl=0', '');
+                            photoUrl = photoUrl.replace('?dl=1', '');
+                        }
+                        
+                        // Convert OneDrive share links
+                        if (photoUrl.includes('1drv.ms') || photoUrl.includes('onedrive.live.com')) {
+                            if (photoUrl.includes('?')) {
+                                photoUrl = photoUrl + '&download=1';
+                            }
+                        }
+                        
                         pagesHTML += `
                             <div class="print-page print-photo-page">
-                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}" 
-                                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22><rect fill=%22%23f0f0f0%22 width=%22400%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23999%22>Photo unavailable</text></svg>'">
+                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}"
+                                     style="max-width: 100%; max-height: 85vh; object-fit: contain;">
                                 <div class="print-photo-caption">
                                     ${record.name} (${record.animalId}) - Photo ${i + 1} of ${photoUrls.length}
                                 </div>
                             </div>
                         `;
                     }
+                } else {
+                    // Add a note if no photos
+                    pagesHTML += `
+                        <div class="print-page print-photo-page">
+                            <div class="print-photo-caption" style="font-size: 1.5rem; color: var(--text-light);">
+                                No photos available for ${record.name}
+                            </div>
+                        </div>
+                    `;
                 }
             }
             
             printContainer.innerHTML = pagesHTML;
             
-            // Wait a moment for images to load
+            // Wait for images to load then print
             setTimeout(() => {
                 window.print();
-                // Clear print container after printing
                 setTimeout(() => {
+                    printContainer.style.display = 'none';
                     printContainer.innerHTML = '';
                 }, 1000);
-            }, 1000);
+            }, 2000);
         }
         
         async function editRecord(rowIndex) {
@@ -1850,9 +1898,10 @@
                 
                 const uploadData = await uploadResponse.json();
                 
-                // Create shared link
+                // Get temporary link (valid for 4 hours)
+                // This is better for direct image display than shared links
                 try {
-                    const linkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+                    const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bearer ${config.dropbox.token}`,
@@ -1863,14 +1912,39 @@
                         })
                     });
                     
-                    if (linkResponse.ok) {
-                        const linkData = await linkResponse.json();
-                        links.push(linkData.url);
+                    if (tempLinkResponse.ok) {
+                        const tempLinkData = await tempLinkResponse.json();
+                        // Store the path so we can regenerate links later
+                        links.push(`DROPBOX:${uploadData.path_display}`);
                     } else {
-                        links.push(uploadData.path_display);
+                        // Fallback to shared link
+                        const linkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${config.dropbox.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                path: uploadData.path_display,
+                                settings: {
+                                    requested_visibility: 'public'
+                                }
+                            })
+                        });
+                        
+                        if (linkResponse.ok) {
+                            const linkData = await linkResponse.json();
+                            // Convert to direct download link
+                            let directLink = linkData.url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+                            directLink = directLink.replace('?dl=0', '');
+                            links.push(directLink);
+                        } else {
+                            links.push(`DROPBOX:${uploadData.path_display}`);
+                        }
                     }
-                } catch {
-                    links.push(uploadData.path_display);
+                } catch (error) {
+                    console.error('Dropbox link error:', error);
+                    links.push(`DROPBOX:${uploadData.path_display}`);
                 }
             }
             
