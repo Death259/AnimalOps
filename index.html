@@ -1500,6 +1500,10 @@
                 return;
             }
             
+            // Reset sort state on refresh
+            currentSortColumn = null;
+            currentSortDirection = 'asc';
+            
             const container = document.getElementById('recordsContainer');
             container.innerHTML = '<p style="text-align: center; padding: 2rem;">Loading records...</p>';
             
