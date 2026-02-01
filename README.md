@@ -4,17 +4,42 @@
 
 # AnimalOps 🐾
 
-A free, open-source web application designed specifically for animal rescue organizations to manage rescued animals and their information. Store animal data in Google Sheets and photos in Dropbox - all using your existing cloud storage solutions.
+A free, open-source web application designed specifically for animal rescue organizations to manage rescued animals and their information. Store animal data in Google Sheets and photos in your choice of cloud storage - all using your existing cloud solutions.
 
 ![AnimalOps Logo](https://img.shields.io/badge/AnimalOps-Animal%20Rescue%20Management-4A8F63?style=for-the-badge)
 
 ## Features
 
+### Data Management
 - 📊 **Google Sheets Integration** - Store all animal records in a spreadsheet for easy viewing, sorting, and analysis
-- 📦 **Dropbox Photo Storage** - Upload and organize animal photos with shareable links
-- ☁️ **OneDrive Photo Storage** - Alternative option for Microsoft users to store photos
-- 💾 **Google Drive Photo Storage** - Perfect for organizations already using Google Workspace
-- 🆔 **Unique Animal IDs** - Automatically generated tracking IDs for each rescue
+- 🔍 **View & Edit Records** - Browse all animals, search by name/ID/species, and edit existing records
+- 🖨️ **Print Function** - Generate printable packets with cover pages showing all animal info plus one page per photo
+- 🆔 **Dual ID System** - User-defined Animal IDs for organization plus auto-generated internal tracking IDs
+
+### Photo Management
+- 📸 **Multiple Storage Options** - Choose between Dropbox, OneDrive, or Google Drive for photo storage
+- 📷 **Camera Integration** - Take photos directly with your device camera (laptop webcam, iPad, or iPhone)
+- 📁 **File Upload** - Upload existing photos from your device
+- 🗂️ **Organized by Animal ID** - Photos automatically organized into folders by your Animal ID
+
+### Animal Information Fields
+- **Required Fields:**
+  - Animal Name
+  - Species (Dog, Cat, Rabbit, Bird, Reptile, Other)
+  - Gender (Male, Female, Neutered Male, Spayed Female, Unknown)
+  - Intake Date
+  - Animal ID (your custom identifier)
+  - Building ID (kennel/location)
+  - Color
+  - Body Condition Score
+- **Optional Fields:**
+  - Breed
+  - Age/Age Estimate
+  - Health Notes
+  - Behavior Notes
+  - Multiple Photos
+
+### Technical Features
 - 🔒 **Privacy-First** - API tokens stored only in your browser session, never on any server
 - 📱 **Mobile Friendly** - Works great on phones and tablets for field use
 - 💰 **Zero Cost** - Runs entirely on GitHub Pages (free) and your existing cloud storage
@@ -152,53 +177,84 @@ User Input → AnimalOps (Browser) → Google Sheets (animal data)
                     Dropbox OR OneDrive OR Google Drive (photos)
 ```
 
-1. **Animal Information** is saved as a row in your Google Sheet with columns for name, species, breed, age, intake date, health notes, and more
-2. **Photos** are uploaded to your chosen cloud storage provider in organized folders (one folder per animal ID)
+1. **Animal Information** is saved as a row in your Google Sheet with columns for all animal details
+2. **Photos** are uploaded to your chosen cloud storage provider in organized folders (one folder per Animal ID)
 3. **Photo Links** from your cloud storage are saved in the Google Sheet for easy reference
 
 ### What Gets Stored Where
 
 **Google Sheets (one row per animal):**
 - Timestamp
-- Animal ID (auto-generated)
+- Internal ID (auto-generated)
 - Name, Species, Breed
 - Age, Gender
 - Intake Date
+- Animal ID (your custom ID)
+- Building ID
+- Color
+- Body Condition Score
 - Health Notes
 - Behavior Notes
-- Photo Links (from Dropbox)
+- Photo Links
 - Photo Count
 
-**Dropbox, OneDrive, or Google Drive (organized by animal ID):**
+**Dropbox, OneDrive, or Google Drive (organized by Animal ID):**
 ```
 /AnimalOps/
-  ├── A1234567890/
-  │   ├── A1234567890_photo_1_IMG_001.jpg
-  │   └── A1234567890_photo_2_IMG_002.jpg
-  └── A1234567891/
-      └── A1234567891_photo_1_IMG_003.jpg
+  ├── DOG-2024-001/
+  │   ├── DOG-2024-001_photo_1_IMG_001.jpg
+  │   └── DOG-2024-001_photo_2_IMG_002.jpg
+  └── CAT-2024-005/
+      └── CAT-2024-005_photo_1_IMG_003.jpg
 ```
+
+## Using AnimalOps
+
+### Adding Animals
+
+1. Click "Add New Animal" from the main screen
+2. Fill in all required fields (marked with *)
+3. Take photos with your device camera or upload existing photos
+4. Click "Save Animal Record"
+5. The app will save data to Google Sheets and upload photos to your cloud storage
+
+### Viewing & Editing Records
+
+1. Click "View Records" from the main form
+2. Click "Refresh Records" to load all animals from Google Sheets
+3. Use the search box to filter by name, species, Animal ID, breed, or building
+4. Click "Edit" on any record to modify it
+5. Make your changes and click "Update Animal Record"
+
+### Printing Records
+
+1. Go to "View Records" and load your animals
+2. Click "Print All" button
+3. The app will:
+   - Fetch all photos from cloud storage
+   - Generate a cover page for each animal with all their information
+   - Create one page per photo showing the image and animal details
+   - Open your browser's print dialog
+4. Print to a printer or save as PDF
+
+### Taking Photos
+
+1. In the Add Animal form, click "Take Photo"
+2. Allow camera access when prompted
+3. The app will use your device's camera (back camera on mobile devices)
+4. Click "Capture Photo" to take the picture
+5. Take as many photos as needed
+6. You can also click "Upload Photos" to select existing photos from your device
 
 ## Privacy & Security
 
 - ✅ All API tokens are stored **only in your browser's session storage**
 - ✅ Tokens are **cleared when you close the browser tab**
 - ✅ **No backend server** - everything runs in your browser
-- ✅ API calls go **directly from your browser** to Google/Dropbox
+- ✅ API calls go **directly from your browser** to Google/Dropbox/OneDrive/Google Drive
 - ✅ Your data never touches any third-party servers
 
 **Important:** Anyone with the API tokens can access your data. Keep them secure and only share with authorized staff.
-
-## Future Enhancements
-
-The application is designed with a modular architecture to easily support additional cloud storage providers:
-
-- [ ] Additional cloud storage providers (Box, AWS S3, etc.)
-- [ ] Office 365 / Excel Online integration (as alternative to Google Sheets)
-- [ ] Search and filter animals
-- [ ] Export reports
-- [ ] Medical record tracking
-- [ ] Adoption status tracking
 
 ## Contributing
 
@@ -206,7 +262,7 @@ We welcome contributions from the community! Whether you're adding new cloud sto
 
 ### Adding a New Cloud Storage Provider
 
-1. Add a new configuration section in the HTML (follow the Dropbox/Sheets pattern)
+1. Add a new configuration section in the HTML (follow the Dropbox/OneDrive/Google Drive pattern)
 2. Implement connection test function (`connect[Provider]()`)
 3. Implement upload function for your provider
 4. Update the form submission handler to use the new provider
@@ -242,22 +298,31 @@ Built with ❤️ for animal rescue organizations worldwide. Every animal deserv
 A: No! Just follow the setup instructions to get your API tokens, and you're ready to go.
 
 **Q: How much does this cost?**  
-A: Free! GitHub Pages hosting is free, and you're using your existing Google and Dropbox accounts.
+A: Free! GitHub Pages hosting is free, and you're using your existing Google and Dropbox/OneDrive/Google Drive accounts.
 
 **Q: What happens if my API token expires?**  
-A: Just generate a new one and enter it in the Configuration section. Your data is safe in Google Sheets and Dropbox.
+A: Just generate a new one and enter it in the Configuration section. Your data is safe in Google Sheets and your cloud storage.
 
 **Q: Can multiple staff members use this?**  
-A: Yes! Each person can generate their own tokens and use the app. All data goes to the same Google Sheet and Dropbox account.
+A: Yes! Each person can generate their own tokens and use the app. All data goes to the same Google Sheet and cloud storage account.
 
 **Q: Can I customize the fields?**  
 A: Yes! The code is open source. You can modify the form fields and update the Google Sheets columns accordingly.
 
 **Q: Is my data backed up?**  
-A: Your data is in Google Sheets and Dropbox, which have their own backup systems. We recommend enabling version history in Google Sheets.
+A: Your data is in Google Sheets and your chosen cloud storage, which have their own backup systems. We recommend enabling version history in Google Sheets.
 
 **Q: Can I use this for other types of rescues (wildlife, exotic animals, etc.)?**  
 A: Absolutely! The fields are customizable, and the species dropdown includes an "Other" option.
+
+**Q: Can I take photos directly in the app?**  
+A: Yes! Click "Take Photo" to use your device's camera (laptop webcam, iPad, or iPhone camera). You can take as many photos as needed.
+
+**Q: Can I print animal records?**  
+A: Yes! Go to "View Records" and click "Print All" to generate printable packets with cover pages and photos for each animal.
+
+**Q: How are photos organized?**  
+A: Photos are automatically organized into folders by your Animal ID (e.g., DOG-2024-001, CAT-2024-005) in your cloud storage.
 
 ---
 

@@ -630,6 +630,10 @@
                 height: 50px;
                 font-size: 1.2rem;
             }
+            
+            .header img {
+                max-height: 80px !important;
+            }
         }
         
         /* Print Styles */
@@ -740,7 +744,7 @@
         <div class="header-content">
             <div style="display: flex; justify-content: flex-start; align-items: center; padding: 10px 0; background: transparent;">
 
-                <img src="animalops-logo.png" alt="AnimalOps" style="height: 140px; width: auto;">
+                <img src="animalops-logo.png" alt="AnimalOps" style="max-width: 100%; height: auto; max-height: 140px;">
             </div>
         </div>
         </div>
@@ -1108,6 +1112,50 @@
         };
 
         let selectedPhotos = [];
+        
+        // Token expiration handling
+        async function handleGoogleSheetsError(error, response) {
+            // Check if error is due to expired/invalid token
+            if (response && (response.status === 401 || response.status === 403)) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData?.error?.message || '';
+                
+                if (errorMessage.includes('invalid') || errorMessage.includes('expired') || 
+                    errorMessage.includes('Invalid Credentials') || response.status === 401) {
+                    
+                    // Token has expired
+                    const spreadsheetId = config.sheets.spreadsheetId;
+                    
+                    // Disconnect
+                    config.sheets.connected = false;
+                    config.sheets.token = null;
+                    document.getElementById('sheetsStatus').textContent = 'Token Expired';
+                    document.getElementById('sheetsStatus').className = 'status-badge disconnected';
+                    
+                    // Show helpful message
+                    const shouldRefresh = confirm(
+                        'Your Google Sheets access token has expired.\n\n' +
+                        'Click OK to go to the Configuration page and enter a new token.\n\n' +
+                        'Your Spreadsheet ID has been saved, you only need to enter a new Access Token.'
+                    );
+                    
+                    if (shouldRefresh) {
+                        showSetup();
+                        // Keep the spreadsheet ID
+                        if (spreadsheetId) {
+                            document.getElementById('sheetsId').value = spreadsheetId;
+                        }
+                        // Focus on token field
+                        setTimeout(() => {
+                            document.getElementById('sheetsToken').focus();
+                        }, 100);
+                    }
+                    
+                    return true; // Error was handled
+                }
+            }
+            return false; // Error was not a token expiration
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
@@ -1485,7 +1533,11 @@
                     
                     displayRecords(allRecords);
                 } else {
-                    container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error);">Failed to load records. Please check your connection.</p>';
+                    // Check if token expired
+                    const handled = await handleGoogleSheetsError(null, response);
+                    if (!handled) {
+                        container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error);">Failed to load records. Please check your connection.</p>';
+                    }
                 }
             } catch (error) {
                 container.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--error);">Error: ${error.message}</p>`;
@@ -2171,6 +2223,11 @@
             );
             
             if (!response.ok) {
+                // Check if token expired
+                const handled = await handleGoogleSheetsError(null, response);
+                if (handled) {
+                    throw new Error('Google Sheets token expired. Please refresh your token and try again.');
+                }
                 const error = await response.json();
                 throw new Error(error.error.message);
             }
@@ -2192,6 +2249,11 @@
             );
             
             if (!response.ok) {
+                // Check if token expired
+                const handled = await handleGoogleSheetsError(null, response);
+                if (handled) {
+                    throw new Error('Google Sheets token expired. Please refresh your token and try again.');
+                }
                 const error = await response.json();
                 throw new Error(error.error.message);
             }
