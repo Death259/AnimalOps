@@ -492,6 +492,16 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            user-select: none;
+        }
+        
+        .records-table th[onclick] {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .records-table th[onclick]:hover {
+            background: var(--primary-light);
         }
         
         .records-table td {
@@ -1480,6 +1490,8 @@
         // Records management
         let allRecords = [];
         let currentEditRow = null;
+        let currentSortColumn = null;
+        let currentSortDirection = 'asc';
         
         async function loadRecords() {
             if (!config.sheets.connected) {
@@ -1552,18 +1564,26 @@
                 return;
             }
             
+            // Function to get sort indicator
+            const getSortIndicator = (column) => {
+                if (currentSortColumn === column) {
+                    return currentSortDirection === 'asc' ? ' ▲' : ' ▼';
+                }
+                return '';
+            };
+            
             const table = `
                 <table class="records-table">
                     <thead>
                         <tr>
-                            <th>Animal ID</th>
-                            <th>Name</th>
-                            <th>Species</th>
-                            <th>Breed</th>
-                            <th>Gender</th>
-                            <th>Building ID</th>
-                            <th>Intake Date</th>
-                            <th>Photos</th>
+                            <th onclick="sortRecords('animalId')" style="cursor: pointer;">Animal ID${getSortIndicator('animalId')}</th>
+                            <th onclick="sortRecords('name')" style="cursor: pointer;">Name${getSortIndicator('name')}</th>
+                            <th onclick="sortRecords('species')" style="cursor: pointer;">Species${getSortIndicator('species')}</th>
+                            <th onclick="sortRecords('breed')" style="cursor: pointer;">Breed${getSortIndicator('breed')}</th>
+                            <th onclick="sortRecords('gender')" style="cursor: pointer;">Gender${getSortIndicator('gender')}</th>
+                            <th onclick="sortRecords('buildingId')" style="cursor: pointer;">Building ID${getSortIndicator('buildingId')}</th>
+                            <th onclick="sortRecords('intakeDate')" style="cursor: pointer;">Intake Date${getSortIndicator('intakeDate')}</th>
+                            <th onclick="sortRecords('photoCount')" style="cursor: pointer;">Photos${getSortIndicator('photoCount')}</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -1592,6 +1612,58 @@
             container.innerHTML = table;
         }
         
+        function sortRecords(column) {
+            // Toggle direction if clicking the same column
+            if (currentSortColumn === column) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortDirection = 'asc';
+            }
+            
+            // Get currently displayed records (respecting search filter)
+            const searchTerm = document.getElementById('searchRecords').value.toLowerCase();
+            let recordsToSort = allRecords;
+            
+            if (searchTerm) {
+                recordsToSort = allRecords.filter(record => 
+                    record.name.toLowerCase().includes(searchTerm) ||
+                    record.species.toLowerCase().includes(searchTerm) ||
+                    record.animalId.toLowerCase().includes(searchTerm) ||
+                    record.breed.toLowerCase().includes(searchTerm) ||
+                    record.buildingId.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // Sort the records
+            const sorted = [...recordsToSort].sort((a, b) => {
+                let aVal = a[column] || '';
+                let bVal = b[column] || '';
+                
+                // Handle numeric columns
+                if (column === 'photoCount') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                }
+                // Handle date columns
+                else if (column === 'intakeDate') {
+                    aVal = new Date(aVal || '1900-01-01');
+                    bVal = new Date(bVal || '1900-01-01');
+                }
+                // Handle string columns (case insensitive)
+                else {
+                    aVal = aVal.toString().toLowerCase();
+                    bVal = bVal.toString().toLowerCase();
+                }
+                
+                if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            displayRecords(sorted);
+        }
+        
         function filterRecords() {
             const searchTerm = document.getElementById('searchRecords').value.toLowerCase();
             
@@ -1603,7 +1675,31 @@
                 record.buildingId.toLowerCase().includes(searchTerm)
             );
             
-            displayRecords(filtered);
+            // Apply current sort if one is active
+            if (currentSortColumn) {
+                const sorted = [...filtered].sort((a, b) => {
+                    let aVal = a[currentSortColumn] || '';
+                    let bVal = b[currentSortColumn] || '';
+                    
+                    if (currentSortColumn === 'photoCount') {
+                        aVal = parseInt(aVal) || 0;
+                        bVal = parseInt(bVal) || 0;
+                    } else if (currentSortColumn === 'intakeDate') {
+                        aVal = new Date(aVal || '1900-01-01');
+                        bVal = new Date(bVal || '1900-01-01');
+                    } else {
+                        aVal = aVal.toString().toLowerCase();
+                        bVal = bVal.toString().toLowerCase();
+                    }
+                    
+                    if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
+                    if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
+                    return 0;
+                });
+                displayRecords(sorted);
+            } else {
+                displayRecords(filtered);
+            }
         }
         
         async function printAllRecords() {
