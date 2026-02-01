@@ -475,12 +475,69 @@
             border-left: 4px solid #FF9800;
             color: #E65100;
         }
+        
+        .records-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .records-table th {
+            background: var(--primary);
+            color: white;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .records-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .records-table tbody tr {
+            transition: background 0.2s;
+        }
+        
+        .records-table tbody tr:hover {
+            background: rgba(77, 184, 196, 0.05);
+        }
+        
+        .edit-btn {
+            padding: 0.4rem 0.8rem;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        
+        .edit-btn:hover {
+            background: var(--accent-light);
+            transform: translateY(-1px);
+        }
 
         .photo-preview {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             gap: 1rem;
             margin-top: 1rem;
+        }
+        
+        .photo-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .photo-controls button {
+            flex: 1;
         }
 
         .photo-item {
@@ -572,6 +629,108 @@
                 width: 50px;
                 height: 50px;
                 font-size: 1.2rem;
+            }
+        }
+        
+        /* Print Styles */
+        .print-page {
+            page-break-after: always;
+            padding: 2rem;
+            background: white;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .print-cover {
+            font-family: 'DM Sans', sans-serif;
+        }
+        
+        .print-cover h1 {
+            color: var(--primary);
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            border-bottom: 4px solid var(--accent);
+            padding-bottom: 1rem;
+        }
+        
+        .print-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .print-info-item {
+            border-left: 3px solid var(--accent);
+            padding-left: 1rem;
+        }
+        
+        .print-info-label {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .print-info-value {
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+        
+        .print-notes {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f8f8f8;
+            border-radius: 8px;
+        }
+        
+        .print-notes h3 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        
+        .print-photo-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .print-photo-page img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+        
+        .print-photo-caption {
+            margin-top: 1rem;
+            font-size: 1.1rem;
+            color: var(--text-light);
+            text-align: center;
+        }
+        
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            
+            #printContainer,
+            #printContainer * {
+                visibility: visible;
+            }
+            
+            #printContainer {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            
+            .print-page {
+                page-break-after: always;
+                margin: 0;
+                padding: 1in;
             }
         }
     </style>
@@ -728,7 +887,12 @@
 
         <!-- Main Form Section -->
         <div class="card setup-section" id="formSection">
-            <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin-bottom: 1rem;">Add New Animal</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin: 0;">Add New Animal</h2>
+                <button type="button" class="btn btn-outline" onclick="showRecords()">
+                    <span>📋 View Records</span>
+                </button>
+            </div>
             
             <form id="animalForm">
                 <div class="form-grid">
@@ -815,8 +979,39 @@
                 <label for="behaviorNotes">Behavior Notes</label>
                 <textarea id="behaviorNotes" placeholder="Temperament, behavioral observations..."></textarea>
 
-                <label for="photos">Photos</label>
-                <input type="file" id="photos" accept="image/*" multiple>
+                <label>Photos</label>
+                <div class="photo-controls">
+                    <button type="button" class="btn btn-outline" onclick="openCamera()">
+                        <span>📷 Take Photo</span>
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('photos').click()">
+                        <span>📁 Upload Photos</span>
+                    </button>
+                </div>
+                <input type="file" id="photos" accept="image/*" multiple style="display: none;">
+                
+                <!-- Camera Modal -->
+                <div id="cameraModal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 800px;">
+                        <div class="modal-header">
+                            <h2>Take Photo</h2>
+                            <button class="close-btn" onclick="closeCamera()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <video id="cameraVideo" autoplay playsinline style="width: 100%; max-height: 500px; background: #000;"></video>
+                            <canvas id="cameraCanvas" style="display: none;"></canvas>
+                            <div style="margin-top: 1rem; text-align: center;">
+                                <button type="button" class="btn btn-secondary" onclick="capturePhoto()">
+                                    <span>📸 Capture Photo</span>
+                                </button>
+                                <button type="button" class="btn btn-outline" onclick="closeCamera()">
+                                    <span>Cancel</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
                 <div id="photoPreview" class="photo-preview"></div>
 
                 <div class="button-group">
@@ -839,7 +1034,42 @@
                 </div>
             </div>
         </div>
+
+        <!-- View Records Section -->
+        <div class="card setup-section" id="recordsSection">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin: 0;">View & Edit Records</h2>
+                <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-outline" onclick="printAllRecords()">
+                        <span>🖨️ Print All</span>
+                    </button>
+                    <button class="btn btn-secondary" onclick="loadRecords()">
+                        <span>🔄 Refresh Records</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <input type="text" id="searchRecords" placeholder="Search by name, species, Animal ID..." 
+                       style="width: 100%;" oninput="filterRecords()">
+            </div>
+            
+            <div id="recordsContainer" style="overflow-x: auto;">
+                <p style="color: var(--text-light); text-align: center; padding: 2rem;">
+                    Click "Refresh Records" to load animal records from Google Sheets.
+                </p>
+            </div>
+            
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button class="btn btn-outline" onclick="showForm()">
+                    <span>← Back to Add Animal</span>
+                </button>
+            </div>
+        </div>
     </div>
+    
+    <!-- Print Preview Container (hidden) -->
+    <div id="printContainer" style="display: none;"></div>
 
     <!-- Help Button -->
     <button class="help-button" onclick="showHelp('main')">?</button>
@@ -968,8 +1198,8 @@
                             },
                             body: JSON.stringify({
                                 values: [[
-                                    'Timestamp', 'Animal ID', 'Name', 'Species', 'Breed', 
-                                    'Age', 'Gender', 'Intake Date', 'Animal ID Field', 
+                                    'Timestamp', 'Internal ID', 'Name', 'Species', 'Breed', 
+                                    'Age', 'Gender', 'Intake Date', 'Animal ID', 
                                     'Building ID', 'Color', 'Body Condition Score',
                                     'Health Notes', 'Behavior Notes', 'Photo Links', 'Photo Count'
                                 ]]
@@ -1193,38 +1423,309 @@
 
         function showSetup() {
             document.getElementById('formSection').classList.remove('active');
+            document.getElementById('recordsSection').classList.remove('active');
             document.getElementById('setupSection').classList.add('active');
+        }
+        
+        function showForm() {
+            document.getElementById('setupSection').classList.remove('active');
+            document.getElementById('recordsSection').classList.remove('active');
+            document.getElementById('formSection').classList.add('active');
+        }
+        
+        function showRecords() {
+            document.getElementById('setupSection').classList.remove('active');
+            document.getElementById('formSection').classList.remove('active');
+            document.getElementById('recordsSection').classList.add('active');
+            loadRecords();
+        }
+        
+        // Records management
+        let allRecords = [];
+        let currentEditRow = null;
+        
+        async function loadRecords() {
+            if (!config.sheets.connected) {
+                alert('Please connect to Google Sheets first');
+                showSetup();
+                return;
+            }
+            
+            const container = document.getElementById('recordsContainer');
+            container.innerHTML = '<p style="text-align: center; padding: 2rem;">Loading records...</p>';
+            
+            try {
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.sheets.token}`
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const rows = data.values || [];
+                    
+                    if (rows.length <= 1) {
+                        container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No records found. Add your first animal!</p>';
+                        return;
+                    }
+                    
+                    // Skip header row
+                    allRecords = rows.slice(1).map((row, index) => ({
+                        rowIndex: index + 2, // +2 because sheets are 1-indexed and we skip header
+                        timestamp: row[0] || '',
+                        internalId: row[1] || '',
+                        name: row[2] || '',
+                        species: row[3] || '',
+                        breed: row[4] || '',
+                        age: row[5] || '',
+                        gender: row[6] || '',
+                        intakeDate: row[7] || '',
+                        animalId: row[8] || '',
+                        buildingId: row[9] || '',
+                        color: row[10] || '',
+                        bodyConditionScore: row[11] || '',
+                        healthNotes: row[12] || '',
+                        behaviorNotes: row[13] || '',
+                        photoLinks: row[14] || '',
+                        photoCount: row[15] || '0'
+                    }));
+                    
+                    displayRecords(allRecords);
+                } else {
+                    container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error);">Failed to load records. Please check your connection.</p>';
+                }
+            } catch (error) {
+                container.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--error);">Error: ${error.message}</p>`;
+            }
+        }
+        
+        function displayRecords(records) {
+            const container = document.getElementById('recordsContainer');
+            
+            if (records.length === 0) {
+                container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No matching records found.</p>';
+                return;
+            }
+            
+            const table = `
+                <table class="records-table">
+                    <thead>
+                        <tr>
+                            <th>Animal ID</th>
+                            <th>Name</th>
+                            <th>Species</th>
+                            <th>Breed</th>
+                            <th>Gender</th>
+                            <th>Building ID</th>
+                            <th>Intake Date</th>
+                            <th>Photos</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${records.map(record => `
+                            <tr>
+                                <td>${record.animalId}</td>
+                                <td>${record.name}</td>
+                                <td>${record.species}</td>
+                                <td>${record.breed}</td>
+                                <td>${record.gender}</td>
+                                <td>${record.buildingId}</td>
+                                <td>${record.intakeDate}</td>
+                                <td>${record.photoCount}</td>
+                                <td>
+                                    <button class="edit-btn" onclick="editRecord(${record.rowIndex})">
+                                        ✏️ Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = table;
+        }
+        
+        function filterRecords() {
+            const searchTerm = document.getElementById('searchRecords').value.toLowerCase();
+            
+            const filtered = allRecords.filter(record => 
+                record.name.toLowerCase().includes(searchTerm) ||
+                record.species.toLowerCase().includes(searchTerm) ||
+                record.animalId.toLowerCase().includes(searchTerm) ||
+                record.breed.toLowerCase().includes(searchTerm) ||
+                record.buildingId.toLowerCase().includes(searchTerm)
+            );
+            
+            displayRecords(filtered);
+        }
+        
+        async function printAllRecords() {
+            if (allRecords.length === 0) {
+                alert('No records to print. Please load records first.');
+                return;
+            }
+            
+            const printContainer = document.getElementById('printContainer');
+            printContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">Preparing print pages...</p>';
+            
+            let pagesHTML = '';
+            
+            for (const record of allRecords) {
+                // Create cover page for this animal
+                pagesHTML += `
+                    <div class="print-page print-cover">
+                        <h1>${record.name}</h1>
+                        
+                        <div class="print-info-grid">
+                            <div class="print-info-item">
+                                <div class="print-info-label">Animal ID</div>
+                                <div class="print-info-value">${record.animalId || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Species</div>
+                                <div class="print-info-value">${record.species || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Breed</div>
+                                <div class="print-info-value">${record.breed || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Age</div>
+                                <div class="print-info-value">${record.age || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Gender</div>
+                                <div class="print-info-value">${record.gender || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Intake Date</div>
+                                <div class="print-info-value">${record.intakeDate || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Building ID</div>
+                                <div class="print-info-value">${record.buildingId || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Color</div>
+                                <div class="print-info-value">${record.color || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Body Condition Score</div>
+                                <div class="print-info-value">${record.bodyConditionScore || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Number of Photos</div>
+                                <div class="print-info-value">${record.photoCount || '0'}</div>
+                            </div>
+                        </div>
+                        
+                        ${record.healthNotes ? `
+                            <div class="print-notes">
+                                <h3>Health Notes</h3>
+                                <p>${record.healthNotes}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${record.behaviorNotes ? `
+                            <div class="print-notes">
+                                <h3>Behavior Notes</h3>
+                                <p>${record.behaviorNotes}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Add photo pages if there are photos
+                if (record.photoLinks) {
+                    const photoUrls = record.photoLinks.split(', ').filter(url => url.trim());
+                    
+                    for (let i = 0; i < photoUrls.length; i++) {
+                        const photoUrl = photoUrls[i].trim();
+                        pagesHTML += `
+                            <div class="print-page print-photo-page">
+                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}" 
+                                     onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22><rect fill=%22%23f0f0f0%22 width=%22400%22 height=%22300%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%23999%22>Photo unavailable</text></svg>'">
+                                <div class="print-photo-caption">
+                                    ${record.name} (${record.animalId}) - Photo ${i + 1} of ${photoUrls.length}
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+            }
+            
+            printContainer.innerHTML = pagesHTML;
+            
+            // Wait a moment for images to load
+            setTimeout(() => {
+                window.print();
+                // Clear print container after printing
+                setTimeout(() => {
+                    printContainer.innerHTML = '';
+                }, 1000);
+            }, 1000);
+        }
+        
+        async function editRecord(rowIndex) {
+            const record = allRecords.find(r => r.rowIndex === rowIndex);
+            if (!record) return;
+            
+            currentEditRow = rowIndex;
+            
+            // Switch to form section and populate fields
+            showForm();
+            
+            // Populate form fields
+            document.getElementById('animalName').value = record.name;
+            document.getElementById('species').value = record.species;
+            document.getElementById('breed').value = record.breed;
+            document.getElementById('age').value = record.age;
+            document.getElementById('gender').value = record.gender;
+            document.getElementById('intakeDate').value = record.intakeDate;
+            document.getElementById('animalId').value = record.animalId;
+            document.getElementById('buildingId').value = record.buildingId;
+            document.getElementById('color').value = record.color;
+            document.getElementById('bodyConditionScore').value = record.bodyConditionScore;
+            document.getElementById('healthNotes').value = record.healthNotes;
+            document.getElementById('behaviorNotes').value = record.behaviorNotes;
+            
+            // Change submit button to "Update"
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.innerHTML = '<span>💾 Update Animal Record</span>';
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         // Photo handling
         function handlePhotoSelection(event) {
             const files = Array.from(event.target.files);
-            selectedPhotos = files;
+            // Add new files to existing photos instead of replacing
+            selectedPhotos.push(...files);
+            updatePhotoPreview();
             
-            const preview = document.getElementById('photoPreview');
-            preview.innerHTML = '';
-            
-            files.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const div = document.createElement('div');
-                    div.className = 'photo-item';
-                    div.innerHTML = `
-                        <img src="${e.target.result}" alt="Photo ${index + 1}">
-                        <button type="button" class="remove-photo" onclick="removePhoto(${index})">×</button>
-                    `;
-                    preview.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
+            // Clear the file input so same file can be selected again
+            event.target.value = '';
         }
 
         function removePhoto(index) {
             selectedPhotos.splice(index, 1);
-            const dataTransfer = new DataTransfer();
-            selectedPhotos.forEach(file => dataTransfer.items.add(file));
-            document.getElementById('photos').files = dataTransfer.files;
-            handlePhotoSelection({ target: document.getElementById('photos') });
+            updatePhotoPreview();
         }
 
         // Form submission
@@ -1238,9 +1739,6 @@
             try {
                 // Get user-entered Animal ID for folder structure
                 const userAnimalId = document.getElementById('animalId').value;
-                // Generate timestamp-based ID for internal tracking
-                const internalId = 'A' + Date.now();
-                const timestamp = new Date().toISOString();
                 
                 // Upload photos to Dropbox, OneDrive, or Google Drive using user's Animal ID
                 let photoLinks = [];
@@ -1254,28 +1752,65 @@
                     }
                 }
                 
-                // Prepare data for Google Sheets
-                const rowData = [
-                    timestamp,
-                    internalId,
-                    document.getElementById('animalName').value,
-                    document.getElementById('species').value,
-                    document.getElementById('breed').value,
-                    document.getElementById('age').value,
-                    document.getElementById('gender').value,
-                    document.getElementById('intakeDate').value,
-                    userAnimalId,
-                    document.getElementById('buildingId').value,
-                    document.getElementById('color').value,
-                    document.getElementById('bodyConditionScore').value,
-                    document.getElementById('healthNotes').value,
-                    document.getElementById('behaviorNotes').value,
-                    photoLinks.join(', '),
-                    photoLinks.length
-                ];
-                
-                // Append to Google Sheets
-                await appendToGoogleSheets(rowData);
+                if (currentEditRow !== null) {
+                    // UPDATE existing record
+                    const record = allRecords.find(r => r.rowIndex === currentEditRow);
+                    
+                    // Merge new photos with existing ones
+                    const existingPhotoLinks = record.photoLinks ? record.photoLinks.split(', ').filter(l => l) : [];
+                    const allPhotoLinks = [...existingPhotoLinks, ...photoLinks];
+                    
+                    const rowData = [
+                        record.timestamp, // Keep original timestamp
+                        record.internalId, // Keep original internal ID
+                        document.getElementById('animalName').value,
+                        document.getElementById('species').value,
+                        document.getElementById('breed').value,
+                        document.getElementById('age').value,
+                        document.getElementById('gender').value,
+                        document.getElementById('intakeDate').value,
+                        userAnimalId,
+                        document.getElementById('buildingId').value,
+                        document.getElementById('color').value,
+                        document.getElementById('bodyConditionScore').value,
+                        document.getElementById('healthNotes').value,
+                        document.getElementById('behaviorNotes').value,
+                        allPhotoLinks.join(', '),
+                        allPhotoLinks.length
+                    ];
+                    
+                    await updateGoogleSheetsRow(currentEditRow, rowData);
+                    
+                    // Reset edit mode
+                    currentEditRow = null;
+                    submitBtn.innerHTML = '<span>💾 Save Animal Record</span>';
+                    
+                } else {
+                    // CREATE new record
+                    const internalId = 'A' + Date.now();
+                    const timestamp = new Date().toISOString();
+                    
+                    const rowData = [
+                        timestamp,
+                        internalId,
+                        document.getElementById('animalName').value,
+                        document.getElementById('species').value,
+                        document.getElementById('breed').value,
+                        document.getElementById('age').value,
+                        document.getElementById('gender').value,
+                        document.getElementById('intakeDate').value,
+                        userAnimalId,
+                        document.getElementById('buildingId').value,
+                        document.getElementById('color').value,
+                        document.getElementById('bodyConditionScore').value,
+                        document.getElementById('healthNotes').value,
+                        document.getElementById('behaviorNotes').value,
+                        photoLinks.join(', '),
+                        photoLinks.length
+                    ];
+                    
+                    await appendToGoogleSheets(rowData);
+                }
                 
                 // Show success message
                 document.getElementById('successMessage').classList.remove('hidden');
@@ -1577,12 +2112,137 @@
                 throw new Error(error.error.message);
             }
         }
+        
+        async function updateGoogleSheetsRow(rowIndex, rowData) {
+            const response = await fetch(
+                `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A${rowIndex}:P${rowIndex}?valueInputOption=RAW`,
+                {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${config.sheets.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        values: [rowData]
+                    })
+                }
+            );
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error.message);
+            }
+        }
+
+        // Camera functionality
+        let cameraStream = null;
+        
+        async function openCamera() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            
+            try {
+                // Request camera access with preference for back camera on mobile
+                cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment', // Prefer back camera
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    } 
+                });
+                
+                video.srcObject = cameraStream;
+                modal.style.display = 'flex';
+            } catch (error) {
+                // If back camera fails, try front camera
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { 
+                            width: { ideal: 1920 },
+                            height: { ideal: 1080 }
+                        } 
+                    });
+                    video.srcObject = cameraStream;
+                    modal.style.display = 'flex';
+                } catch (err) {
+                    alert('Unable to access camera: ' + err.message);
+                }
+            }
+        }
+        
+        function closeCamera() {
+            const modal = document.getElementById('cameraModal');
+            const video = document.getElementById('cameraVideo');
+            
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+            }
+            
+            video.srcObject = null;
+            modal.style.display = 'none';
+        }
+        
+        function capturePhoto() {
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const context = canvas.getContext('2d');
+            
+            // Set canvas size to video size
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Draw video frame to canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert canvas to blob
+            canvas.toBlob((blob) => {
+                // Create a file from the blob
+                const timestamp = Date.now();
+                const file = new File([blob], `camera_photo_${timestamp}.jpg`, { type: 'image/jpeg' });
+                
+                // Add to selected photos
+                selectedPhotos.push(file);
+                
+                // Update preview
+                updatePhotoPreview();
+                
+                // Close camera
+                closeCamera();
+            }, 'image/jpeg', 0.9);
+        }
+        
+        function updatePhotoPreview() {
+            const preview = document.getElementById('photoPreview');
+            preview.innerHTML = '';
+            
+            selectedPhotos.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const photoItem = document.createElement('div');
+                    photoItem.className = 'photo-item';
+                    photoItem.innerHTML = `
+                        <img src="${e.target.result}" alt="Photo ${index + 1}">
+                        <button type="button" class="remove-photo" onclick="removePhoto(${index})">&times;</button>
+                    `;
+                    preview.appendChild(photoItem);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function removePhoto(index) {
+            selectedPhotos.splice(index, 1);
+            updatePhotoPreview();
+        }
 
         function resetForm() {
             document.getElementById('animalForm').reset();
             document.getElementById('intakeDate').valueAsDate = new Date();
             selectedPhotos = [];
             document.getElementById('photoPreview').innerHTML = '';
+            currentEditRow = null;
+            document.getElementById('submitBtn').innerHTML = '<span>💾 Save Animal Record</span>';
         }
 
         // Help system
