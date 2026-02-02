@@ -297,6 +297,21 @@
             background: var(--primary);
             color: white;
         }
+        
+        .btn-text {
+            background: transparent;
+            color: var(--text-light);
+            border: none;
+            padding: 0.5rem;
+            text-decoration: underline;
+        }
+        
+        .btn-text:hover {
+            color: var(--primary);
+            background: transparent;
+            transform: none;
+            box-shadow: none;
+        }
 
         .btn:disabled {
             opacity: 0.5;
@@ -737,19 +752,23 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 0.5in !important;
         }
         
         .print-photo-page img {
             max-width: 100%;
-            max-height: 90vh;
+            max-height: calc(100vh - 3in);
+            width: auto;
+            height: auto;
             object-fit: contain;
         }
         
         .print-photo-caption {
-            margin-top: 1rem;
-            font-size: 1.1rem;
+            margin-top: 0.5rem;
+            font-size: 1rem;
             color: var(--text-light);
             text-align: center;
+            max-height: 1.5in;
         }
         
         @media print {
@@ -771,8 +790,35 @@
             
             .print-page {
                 page-break-after: always;
+                page-break-inside: avoid;
                 margin: 0;
                 padding: 1in;
+                height: 100vh;
+                box-sizing: border-box;
+            }
+            
+            .print-photo-page {
+                padding: 0.5in !important;
+                height: 100vh;
+                box-sizing: border-box;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .print-photo-page img {
+                max-width: 90%;
+                max-height: calc(100vh - 2.5in);
+                width: auto;
+                height: auto;
+                object-fit: contain;
+            }
+            
+            .print-photo-caption {
+                margin-top: 0.25in;
+                font-size: 12pt;
+                page-break-before: avoid;
             }
         }
     </style>
@@ -811,20 +857,52 @@
                         </h3>
                         <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data and records</p>
                         
-                        <label for="sheetsId">Spreadsheet ID</label>
-                        <input type="text" id="sheetsId" placeholder="1ABC...xyz">
-                        
-                        <label for="sheetsToken">API Access Token</label>
-                        <input type="password" id="sheetsToken" placeholder="ya29.a0...">
-                        
-                        <div class="button-group">
-                            <button class="btn btn-primary" onclick="connectGoogleSheets()">
-                                <span>Connect</span>
-                            </button>
-                            <button class="btn btn-outline" onclick="showHelp('sheets')">
-                                <span>📖 How to Get Token</span>
-                            </button>
+                        <div id="sheetsOAuthSection">
+                            <label for="sheetsId">Spreadsheet ID</label>
+                            <input type="text" id="sheetsId" placeholder="1ABC...xyz">
+                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem;">
+                                Find this in your Google Sheet URL: docs.google.com/spreadsheets/d/<strong>SPREADSHEET_ID</strong>/edit
+                            </p>
+                            
+                            <div class="button-group" style="margin-top: 1rem;">
+                                <button class="btn btn-primary" onclick="signInWithGoogle()" id="googleSignInBtn">
+                                    <span>🔐 Sign in with Google</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showHelp('sheets')">
+                                    <span>📖 Help</span>
+                                </button>
+                            </div>
+                            
+                            <div id="sheetsConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected as:</strong> <span id="sheetsUserEmail"></span></p>
+                                <button class="btn btn-outline" onclick="disconnectGoogleSheets()" style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <span>Disconnect</span>
+                                </button>
+                            </div>
                         </div>
+                        
+                        <!-- Fallback to manual token (hidden by default) -->
+                        <div id="sheetsManualSection" style="display: none;">
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+                                <strong>Advanced:</strong> Manual token entry
+                            </p>
+                            
+                            <label for="sheetsToken">API Access Token</label>
+                            <input type="password" id="sheetsToken" placeholder="ya29.a0...">
+                            
+                            <div class="button-group">
+                                <button class="btn btn-primary" onclick="connectGoogleSheetsManual()">
+                                    <span>Connect</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showOAuthSection()">
+                                    <span>← Back to Sign In</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-text" onclick="toggleManualMode()" style="margin-top: 1rem; font-size: 0.85rem;">
+                            <span id="toggleModeText">Use manual token instead</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -846,20 +924,55 @@
                         </h3>
                         <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
                         
-                        <label for="dropboxToken">API Access Token</label>
-                        <input type="password" id="dropboxToken" placeholder="sl.B...">
-                        
-                        <label for="dropboxFolder">Folder Path (optional)</label>
-                        <input type="text" id="dropboxFolder" placeholder="/AnimalOps" value="/AnimalOps">
-                        
-                        <div class="button-group">
-                            <button class="btn btn-primary" onclick="connectDropbox()">
-                                <span>Connect</span>
-                            </button>
-                            <button class="btn btn-outline" onclick="showHelp('dropbox')">
-                                <span>📖 How to Get Token</span>
-                            </button>
+                        <div id="dropboxOAuthSection">
+                            <label for="dropboxFolder">Folder Path (optional)</label>
+                            <input type="text" id="dropboxFolder" placeholder="/AnimalOps" value="/AnimalOps">
+                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem;">
+                                Photos will be organized in subfolders by Animal ID
+                            </p>
+                            
+                            <div class="button-group" style="margin-top: 1rem;">
+                                <button class="btn btn-primary" onclick="signInWithDropbox()" id="dropboxSignInBtn">
+                                    <span>🔐 Sign in with Dropbox</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showHelp('dropbox')">
+                                    <span>📖 Help</span>
+                                </button>
+                            </div>
+                            
+                            <div id="dropboxConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected to Dropbox</strong></p>
+                                <button class="btn btn-outline" onclick="disconnectDropbox()" style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <span>Disconnect</span>
+                                </button>
+                            </div>
                         </div>
+                        
+                        <!-- Fallback to manual token (hidden by default) -->
+                        <div id="dropboxManualSection" style="display: none;">
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+                                <strong>Advanced:</strong> Manual token entry
+                            </p>
+                            
+                            <label for="dropboxToken">API Access Token</label>
+                            <input type="password" id="dropboxToken" placeholder="sl.B...">
+                            
+                            <label for="dropboxFolderManual">Folder Path (optional)</label>
+                            <input type="text" id="dropboxFolderManual" placeholder="/AnimalOps" value="/AnimalOps">
+                            
+                            <div class="button-group">
+                                <button class="btn btn-primary" onclick="connectDropboxManual()">
+                                    <span>Connect</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showDropboxOAuthSection()">
+                                    <span>← Back to Sign In</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-text" onclick="toggleDropboxManualMode()" style="margin-top: 1rem; font-size: 0.85rem;">
+                            <span id="toggleDropboxModeText">Use manual token instead</span>
+                        </button>
                     </div>
 
                     <!-- OneDrive Configuration -->
@@ -1195,16 +1308,37 @@
     </footer>
 
     <script>
+        // OAuth Configuration - YOU NEED TO UPDATE THESE VALUES
+        const OAUTH_CONFIG = {
+            clientId: '365835275822-kds4lbq9stu5ov9qt9cddq2v3ck3dkgl.apps.googleusercontent.com',
+            redirectUri: window.location.origin + window.location.pathname,
+            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
+            authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+            tokenEndpoint: 'https://oauth2.googleapis.com/token'
+        };
+        
+        const DROPBOX_OAUTH_CONFIG = {
+            clientId: 'bvvotc2lattvdar',
+            redirectUri: window.location.origin + window.location.pathname,
+            authEndpoint: 'https://www.dropbox.com/oauth2/authorize',
+            tokenEndpoint: 'https://api.dropboxapi.com/oauth2/token'
+        };
+        
         // Global state
         let config = {
             sheets: {
                 connected: false,
                 spreadsheetId: null,
-                token: null
+                token: null,
+                refreshToken: null,
+                expiresAt: null,
+                userEmail: null
             },
             dropbox: {
                 connected: false,
                 token: null,
+                refreshToken: null,
+                expiresAt: null,
                 folder: '/AnimalOps'
             },
             onedrive: {
@@ -1222,6 +1356,574 @@
 
         let selectedPhotos = [];
         
+        // OAuth PKCE Helper Functions
+        function generateCodeVerifier() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return base64URLEncode(array);
+        }
+        
+        function base64URLEncode(buffer) {
+            const bytes = new Uint8Array(buffer);
+            let binary = '';
+            for (let i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+        
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return base64URLEncode(hash);
+        }
+        
+        // Check for OAuth callback on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            handleOAuthCallback();
+            handleDropboxOAuthCallback();
+            loadSavedConfig();
+        });
+        
+        function loadSavedConfig() {
+            // Load saved OAuth credentials from localStorage
+            const savedSheets = localStorage.getItem('animalops_sheets_config');
+            if (savedSheets) {
+                try {
+                    const sheetsConfig = JSON.parse(savedSheets);
+                    config.sheets = { ...config.sheets, ...sheetsConfig };
+                    
+                    if (config.sheets.connected && config.sheets.token) {
+                        // Update UI
+                        document.getElementById('sheetsStatus').textContent = 'Connected';
+                        document.getElementById('sheetsStatus').className = 'status-badge connected';
+                        document.getElementById('sheetsConfig').classList.add('connected');
+                        document.getElementById('sheetsId').value = config.sheets.spreadsheetId || '';
+                        
+                        if (config.sheets.userEmail) {
+                            document.getElementById('sheetsConnectionInfo').style.display = 'block';
+                            document.getElementById('sheetsUserEmail').textContent = config.sheets.userEmail;
+                        }
+                        
+                        // Check if token needs refresh
+                        if (config.sheets.expiresAt && Date.now() >= config.sheets.expiresAt) {
+                            refreshGoogleToken();
+                        }
+                        
+                        checkReadyState();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved config:', e);
+                }
+            }
+            
+            // Load saved Dropbox config
+            const savedDropbox = localStorage.getItem('animalops_dropbox_config');
+            if (savedDropbox) {
+                try {
+                    const dropboxConfig = JSON.parse(savedDropbox);
+                    config.dropbox = { ...config.dropbox, ...dropboxConfig };
+                    
+                    if (config.dropbox.connected && config.dropbox.token) {
+                        // Update UI
+                        document.getElementById('dropboxStatus').textContent = 'Connected';
+                        document.getElementById('dropboxStatus').className = 'status-badge connected';
+                        document.getElementById('dropboxConfig').classList.add('connected');
+                        document.getElementById('dropboxFolder').value = config.dropbox.folder || '/AnimalOps';
+                        document.getElementById('dropboxConnectionInfo').style.display = 'block';
+                        
+                        // Check if token needs refresh
+                        if (config.dropbox.expiresAt && Date.now() >= config.dropbox.expiresAt) {
+                            refreshDropboxToken();
+                        }
+                        
+                        checkReadyState();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved Dropbox config:', e);
+                }
+            }
+        }
+        
+        function saveConfig() {
+            localStorage.setItem('animalops_sheets_config', JSON.stringify(config.sheets));
+            localStorage.setItem('animalops_dropbox_config', JSON.stringify(config.dropbox));
+        }
+        
+        async function signInWithGoogle() {
+            if (!OAUTH_CONFIG.clientId || OAUTH_CONFIG.clientId.includes('YOUR_CLIENT_ID')) {
+                alert('OAuth is not configured yet. Please see the setup instructions in the documentation.\n\nFor now, you can use "Use manual token instead" below.');
+                return;
+            }
+            
+            const spreadsheetId = document.getElementById('sheetsId').value.trim();
+            if (!spreadsheetId) {
+                alert('Please enter your Spreadsheet ID first');
+                document.getElementById('sheetsId').focus();
+                return;
+            }
+            
+            // Save spreadsheet ID
+            sessionStorage.setItem('animalops_spreadsheet_id', spreadsheetId);
+            
+            // Generate PKCE parameters
+            const codeVerifier = generateCodeVerifier();
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+            
+            // Save verifier for later
+            sessionStorage.setItem('animalops_code_verifier', codeVerifier);
+            
+            // Build authorization URL
+            const params = new URLSearchParams({
+                client_id: OAUTH_CONFIG.clientId,
+                redirect_uri: OAUTH_CONFIG.redirectUri,
+                response_type: 'code',
+                scope: OAUTH_CONFIG.scopes,
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256',
+                access_type: 'offline',
+                prompt: 'consent'
+            });
+            
+            const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
+            
+            // Redirect to Google for authorization
+            window.location.href = authUrl;
+        }
+        
+        async function handleOAuthCallback() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const error = urlParams.get('error');
+            
+            if (error) {
+                alert(`Authorization failed: ${error}`);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
+            
+            if (code) {
+                // Exchange code for tokens
+                const codeVerifier = sessionStorage.getItem('animalops_code_verifier');
+                const spreadsheetId = sessionStorage.getItem('animalops_spreadsheet_id');
+                
+                if (!codeVerifier) {
+                    alert('OAuth state lost. Please try signing in again.');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                }
+                
+                try {
+                    const tokenResponse = await fetch(OAUTH_CONFIG.tokenEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            client_id: OAUTH_CONFIG.clientId,
+                            code: code,
+                            code_verifier: codeVerifier,
+                            grant_type: 'authorization_code',
+                            redirect_uri: OAUTH_CONFIG.redirectUri
+                        })
+                    });
+                    
+                    if (!tokenResponse.ok) {
+                        throw new Error('Failed to exchange code for tokens');
+                    }
+                    
+                    const tokens = await tokenResponse.json();
+                    
+                    // Get user email
+                    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                        headers: {
+                            'Authorization': `Bearer ${tokens.access_token}`
+                        }
+                    });
+                    
+                    const userInfo = await userInfoResponse.json();
+                    
+                    // Save tokens and config
+                    config.sheets.connected = true;
+                    config.sheets.token = tokens.access_token;
+                    config.sheets.refreshToken = tokens.refresh_token;
+                    config.sheets.expiresAt = Date.now() + (tokens.expires_in * 1000);
+                    config.sheets.spreadsheetId = spreadsheetId;
+                    config.sheets.userEmail = userInfo.email;
+                    
+                    saveConfig();
+                    
+                    // Update UI
+                    document.getElementById('sheetsStatus').textContent = 'Connected';
+                    document.getElementById('sheetsStatus').className = 'status-badge connected';
+                    document.getElementById('sheetsConfig').classList.add('connected');
+                    document.getElementById('sheetsId').value = spreadsheetId;
+                    document.getElementById('sheetsConnectionInfo').style.display = 'block';
+                    document.getElementById('sheetsUserEmail').textContent = userInfo.email;
+                    
+                    // Initialize headers
+                    await initializeSheetHeaders();
+                    
+                    checkReadyState();
+                    
+                    // Clean up
+                    sessionStorage.removeItem('animalops_code_verifier');
+                    sessionStorage.removeItem('animalops_spreadsheet_id');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    alert('Successfully connected to Google Sheets!');
+                    
+                } catch (error) {
+                    console.error('OAuth error:', error);
+                    alert(`Failed to connect: ${error.message}`);
+                    sessionStorage.removeItem('animalops_code_verifier');
+                    sessionStorage.removeItem('animalops_spreadsheet_id');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
+        }
+        
+        async function refreshGoogleToken() {
+            if (!config.sheets.refreshToken) {
+                console.error('No refresh token available');
+                return false;
+            }
+            
+            try {
+                const tokenResponse = await fetch(OAUTH_CONFIG.tokenEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        client_id: OAUTH_CONFIG.clientId,
+                        refresh_token: config.sheets.refreshToken,
+                        grant_type: 'refresh_token'
+                    })
+                });
+                
+                if (!tokenResponse.ok) {
+                    throw new Error('Failed to refresh token');
+                }
+                
+                const tokens = await tokenResponse.json();
+                
+                config.sheets.token = tokens.access_token;
+                config.sheets.expiresAt = Date.now() + (tokens.expires_in * 1000);
+                
+                // Update refresh token if a new one was provided
+                if (tokens.refresh_token) {
+                    config.sheets.refreshToken = tokens.refresh_token;
+                }
+                
+                saveConfig();
+                return true;
+                
+            } catch (error) {
+                console.error('Token refresh error:', error);
+                return false;
+            }
+        }
+        
+        function disconnectGoogleSheets() {
+            if (confirm('Are you sure you want to disconnect Google Sheets? You will need to sign in again.')) {
+                config.sheets = {
+                    connected: false,
+                    spreadsheetId: null,
+                    token: null,
+                    refreshToken: null,
+                    expiresAt: null,
+                    userEmail: null
+                };
+                
+                localStorage.removeItem('animalops_sheets_config');
+                
+                document.getElementById('sheetsStatus').textContent = 'Not Connected';
+                document.getElementById('sheetsStatus').className = 'status-badge disconnected';
+                document.getElementById('sheetsConfig').classList.remove('connected');
+                document.getElementById('sheetsConnectionInfo').style.display = 'none';
+                document.getElementById('sheetsUserEmail').textContent = '';
+                
+                checkReadyState();
+            }
+        }
+        
+        function toggleManualMode() {
+            const oauthSection = document.getElementById('sheetsOAuthSection');
+            const manualSection = document.getElementById('sheetsManualSection');
+            const toggleText = document.getElementById('toggleModeText');
+            
+            if (oauthSection.style.display === 'none') {
+                // Show OAuth, hide manual
+                oauthSection.style.display = 'block';
+                manualSection.style.display = 'none';
+                toggleText.textContent = 'Use manual token instead';
+            } else {
+                // Show manual, hide OAuth
+                oauthSection.style.display = 'none';
+                manualSection.style.display = 'block';
+                toggleText.textContent = 'Use Sign in with Google instead';
+            }
+        }
+        
+        function showOAuthSection() {
+            document.getElementById('sheetsOAuthSection').style.display = 'block';
+            document.getElementById('sheetsManualSection').style.display = 'none';
+            document.getElementById('toggleModeText').textContent = 'Use manual token instead';
+        }
+        
+        // Manual token connection (fallback)
+        async function connectGoogleSheetsManual() {
+            const spreadsheetId = document.getElementById('sheetsId').value.trim();
+            const token = document.getElementById('sheetsToken').value.trim();
+            
+            if (!spreadsheetId || !token) {
+                alert('Please enter both Spreadsheet ID and Access Token');
+                return;
+            }
+
+            try {
+                // Test the connection
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    }
+                );
+
+                if (response.ok) {
+                    config.sheets.connected = true;
+                    config.sheets.spreadsheetId = spreadsheetId;
+                    config.sheets.token = token;
+                    
+                    document.getElementById('sheetsStatus').textContent = 'Connected';
+                    document.getElementById('sheetsStatus').className = 'status-badge connected';
+                    document.getElementById('sheetsConfig').classList.add('connected');
+                    
+                    // Initialize sheet headers if needed
+                    await initializeSheetHeaders();
+                    
+                    checkReadyState();
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to connect to Google Sheets: ${error.error.message}`);
+                }
+            } catch (error) {
+                alert(`Connection error: ${error.message}`);
+            }
+        }
+        
+        // ============ DROPBOX OAUTH ============
+        
+        async function signInWithDropbox() {
+            if (!DROPBOX_OAUTH_CONFIG.clientId || DROPBOX_OAUTH_CONFIG.clientId.includes('YOUR_DROPBOX')) {
+                alert('Dropbox OAuth is not configured yet. Please see the setup instructions in the documentation.\n\nFor now, you can use "Use manual token instead" below.');
+                return;
+            }
+            
+            const folder = document.getElementById('dropboxFolder').value.trim() || '/AnimalOps';
+            
+            // Save folder preference
+            sessionStorage.setItem('animalops_dropbox_folder', folder);
+            
+            // Dropbox uses simple token-based OAuth (no PKCE needed)
+            const params = new URLSearchParams({
+                client_id: DROPBOX_OAUTH_CONFIG.clientId,
+                redirect_uri: DROPBOX_OAUTH_CONFIG.redirectUri,
+                response_type: 'token',
+                token_access_type: 'offline' // Request refresh token
+            });
+            
+            const authUrl = `${DROPBOX_OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
+            
+            // Redirect to Dropbox for authorization
+            window.location.href = authUrl;
+        }
+        
+        function handleDropboxOAuthCallback() {
+            // Dropbox returns token in URL hash (#)
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            
+            const accessToken = params.get('access_token');
+            const refreshToken = params.get('refresh_token');
+            const expiresIn = params.get('expires_in');
+            const error = params.get('error');
+            
+            if (error) {
+                alert(`Dropbox authorization failed: ${error}`);
+                window.history.replaceState({}, document.title, window.location.pathname);
+                return;
+            }
+            
+            if (accessToken) {
+                const folder = sessionStorage.getItem('animalops_dropbox_folder') || '/AnimalOps';
+                
+                // Save tokens and config
+                config.dropbox.connected = true;
+                config.dropbox.token = accessToken;
+                config.dropbox.refreshToken = refreshToken;
+                config.dropbox.folder = folder;
+                
+                if (expiresIn) {
+                    config.dropbox.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
+                }
+                
+                saveConfig();
+                
+                // Update UI
+                document.getElementById('dropboxStatus').textContent = 'Connected';
+                document.getElementById('dropboxStatus').className = 'status-badge connected';
+                document.getElementById('dropboxConfig').classList.add('connected');
+                document.getElementById('dropboxFolder').value = folder;
+                document.getElementById('dropboxConnectionInfo').style.display = 'block';
+                
+                checkReadyState();
+                
+                // Clean up
+                sessionStorage.removeItem('animalops_dropbox_folder');
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                alert('Successfully connected to Dropbox!');
+            }
+        }
+        
+        async function refreshDropboxToken() {
+            if (!config.dropbox.refreshToken) {
+                console.error('No Dropbox refresh token available');
+                return false;
+            }
+            
+            try {
+                const params = new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    refresh_token: config.dropbox.refreshToken,
+                    client_id: DROPBOX_OAUTH_CONFIG.clientId
+                });
+                
+                const tokenResponse = await fetch(DROPBOX_OAUTH_CONFIG.tokenEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params
+                });
+                
+                if (!tokenResponse.ok) {
+                    throw new Error('Failed to refresh Dropbox token');
+                }
+                
+                const tokens = await tokenResponse.json();
+                
+                config.dropbox.token = tokens.access_token;
+                
+                if (tokens.expires_in) {
+                    config.dropbox.expiresAt = Date.now() + (tokens.expires_in * 1000);
+                }
+                
+                // Update refresh token if a new one was provided
+                if (tokens.refresh_token) {
+                    config.dropbox.refreshToken = tokens.refresh_token;
+                }
+                
+                saveConfig();
+                return true;
+                
+            } catch (error) {
+                console.error('Dropbox token refresh error:', error);
+                return false;
+            }
+        }
+        
+        function disconnectDropbox() {
+            if (confirm('Are you sure you want to disconnect Dropbox? You will need to sign in again.')) {
+                config.dropbox = {
+                    connected: false,
+                    token: null,
+                    refreshToken: null,
+                    expiresAt: null,
+                    folder: '/AnimalOps'
+                };
+                
+                localStorage.removeItem('animalops_dropbox_config');
+                
+                document.getElementById('dropboxStatus').textContent = 'Not Connected';
+                document.getElementById('dropboxStatus').className = 'status-badge disconnected';
+                document.getElementById('dropboxConfig').classList.remove('connected');
+                document.getElementById('dropboxConnectionInfo').style.display = 'none';
+                
+                checkReadyState();
+            }
+        }
+        
+        function toggleDropboxManualMode() {
+            const oauthSection = document.getElementById('dropboxOAuthSection');
+            const manualSection = document.getElementById('dropboxManualSection');
+            const toggleText = document.getElementById('toggleDropboxModeText');
+            
+            if (oauthSection.style.display === 'none') {
+                // Show OAuth, hide manual
+                oauthSection.style.display = 'block';
+                manualSection.style.display = 'none';
+                toggleText.textContent = 'Use manual token instead';
+            } else {
+                // Show manual, hide OAuth
+                oauthSection.style.display = 'none';
+                manualSection.style.display = 'block';
+                toggleText.textContent = 'Use Sign in with Dropbox instead';
+            }
+        }
+        
+        function showDropboxOAuthSection() {
+            document.getElementById('dropboxOAuthSection').style.display = 'block';
+            document.getElementById('dropboxManualSection').style.display = 'none';
+            document.getElementById('toggleDropboxModeText').textContent = 'Use manual token instead';
+        }
+        
+        // Manual Dropbox connection (fallback)
+        async function connectDropboxManual() {
+            const token = document.getElementById('dropboxToken').value.trim();
+            const folder = document.getElementById('dropboxFolderManual').value.trim() || '/AnimalOps';
+            
+            if (!token) {
+                alert('Please enter your Dropbox Access Token');
+                return;
+            }
+
+            try {
+                // Test the connection
+                const response = await fetch('https://api.dropboxapi.com/2/users/get_current_account', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    config.dropbox.connected = true;
+                    config.dropbox.token = token;
+                    config.dropbox.folder = folder;
+                    
+                    document.getElementById('dropboxStatus').textContent = 'Connected';
+                    document.getElementById('dropboxStatus').className = 'status-badge connected';
+                    document.getElementById('dropboxConfig').classList.add('connected');
+                    
+                    checkReadyState();
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to connect to Dropbox: ${error.error_summary}`);
+                }
+            } catch (error) {
+                alert(`Connection error: ${error.message}`);
+            }
+        }
+        
         // Token expiration handling
         async function handleGoogleSheetsError(error, response) {
             // Check if error is due to expired/invalid token
@@ -1232,7 +1934,16 @@
                 if (errorMessage.includes('invalid') || errorMessage.includes('expired') || 
                     errorMessage.includes('Invalid Credentials') || response.status === 401) {
                     
-                    // Token has expired
+                    // Try to refresh token if we have a refresh token
+                    if (config.sheets.refreshToken) {
+                        const refreshed = await refreshGoogleToken();
+                        if (refreshed) {
+                            // Token refreshed successfully, let the caller retry the request
+                            return true;
+                        }
+                    }
+                    
+                    // Token has expired and couldn't refresh
                     const spreadsheetId = config.sheets.spreadsheetId;
                     
                     // Disconnect
@@ -1243,9 +1954,9 @@
                     
                     // Show helpful message
                     const shouldRefresh = confirm(
-                        'Your Google Sheets access token has expired.\n\n' +
-                        'Click OK to go to the Configuration page and enter a new token.\n\n' +
-                        'Your Spreadsheet ID has been saved, you only need to enter a new Access Token.'
+                        'Your Google Sheets access has expired.\n\n' +
+                        'Click OK to go to the Configuration page and sign in again.\n\n' +
+                        'Your Spreadsheet ID has been saved.'
                     );
                     
                     if (shouldRefresh) {
@@ -1254,10 +1965,6 @@
                         if (spreadsheetId) {
                             document.getElementById('sheetsId').value = spreadsheetId;
                         }
-                        // Focus on token field
-                        setTimeout(() => {
-                            document.getElementById('sheetsToken').focus();
-                        }, 100);
                     }
                     
                     return true; // Error was handled
@@ -1275,7 +1982,7 @@
             document.getElementById('photos').addEventListener('change', handlePhotoSelection);
         });
 
-        // Google Sheets Connection
+        // Old connection function - kept for backward compatibility but not used in UI
         async function connectGoogleSheets() {
             const spreadsheetId = document.getElementById('sheetsId').value.trim();
             const token = document.getElementById('sheetsToken').value.trim();
@@ -1403,6 +2110,9 @@
                 alert(`Connection error: ${error.message}`);
             }
         }
+        
+        // Note: connectDropbox() has been replaced by signInWithDropbox() for OAuth
+        // The manual connection is now connectDropboxManual()
 
         // OneDrive Connection
         async function connectOneDrive() {
@@ -2057,10 +2767,9 @@
                         
                         pagesHTML += `
                             <div class="print-page print-photo-page">
-                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}"
-                                     style="max-width: 100%; max-height: 85vh; object-fit: contain;">
+                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}">
                                 <div class="print-photo-caption">
-                                    ${record.name} (${record.animalId}) - Photo ${i + 1} of ${photoUrls.length}
+                                    ${record.animalId} - Photo ${i + 1} of ${photoUrls.length}
                                 </div>
                             </div>
                         `;
