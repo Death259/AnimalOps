@@ -532,6 +532,34 @@
             background: var(--accent-light);
             transform: translateY(-1px);
         }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: transform 0.2s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
 
         .photo-preview {
             display: grid;
@@ -1052,6 +1080,46 @@
                 </div>
             </div>
             
+            <!-- Stats Dashboard -->
+            <div id="statsDashboard" style="display: none; margin-bottom: 2rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Animals</div>
+                        <div class="stat-value" id="statTotal">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">🐕 Dogs</div>
+                        <div class="stat-value" id="statDogs">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">🐈 Cats</div>
+                        <div class="stat-value" id="statCats">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">🐰 Other</div>
+                        <div class="stat-value" id="statOther">0</div>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div class="stat-card">
+                        <div class="stat-label">Avg Days in Care</div>
+                        <div class="stat-value" id="statAvgDays">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">📸 With Photos</div>
+                        <div class="stat-value" id="statWithPhotos">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Recent (7 days)</div>
+                        <div class="stat-value" id="statRecent">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Photos</div>
+                        <div class="stat-value" id="statTotalPhotos">0</div>
+                    </div>
+                </div>
+            </div>
+            
             <div style="margin-bottom: 1.5rem;">
                 <input type="text" id="searchRecords" placeholder="Search by name, species, Animal ID..." 
                        style="width: 100%;" oninput="filterRecords()">
@@ -1552,6 +1620,7 @@
                         photoCount: row[15] || '0'
                     }));
                     
+                    updateStats();
                     displayRecords(allRecords);
                 } else {
                     // Check if token expired
@@ -1563,6 +1632,74 @@
             } catch (error) {
                 container.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--error);">Error: ${error.message}</p>`;
             }
+        }
+        
+        function updateStats() {
+            if (allRecords.length === 0) {
+                document.getElementById('statsDashboard').style.display = 'none';
+                return;
+            }
+            
+            // Show dashboard
+            document.getElementById('statsDashboard').style.display = 'block';
+            
+            // Total animals
+            document.getElementById('statTotal').textContent = allRecords.length;
+            
+            // Count by species
+            const dogs = allRecords.filter(r => r.species.toLowerCase() === 'dog').length;
+            const cats = allRecords.filter(r => r.species.toLowerCase() === 'cat').length;
+            const other = allRecords.length - dogs - cats;
+            
+            document.getElementById('statDogs').textContent = dogs;
+            document.getElementById('statCats').textContent = cats;
+            document.getElementById('statOther').textContent = other;
+            
+            // Calculate average days in care
+            const today = new Date();
+            let totalDays = 0;
+            let validDates = 0;
+            
+            allRecords.forEach(record => {
+                if (record.intakeDate) {
+                    const intakeDate = new Date(record.intakeDate);
+                    if (!isNaN(intakeDate)) {
+                        const days = Math.floor((today - intakeDate) / (1000 * 60 * 60 * 24));
+                        if (days >= 0) { // Only count valid dates (not future dates)
+                            totalDays += days;
+                            validDates++;
+                        }
+                    }
+                }
+            });
+            
+            const avgDays = validDates > 0 ? Math.round(totalDays / validDates) : 0;
+            document.getElementById('statAvgDays').textContent = avgDays;
+            
+            // Animals with photos
+            const withPhotos = allRecords.filter(r => parseInt(r.photoCount) > 0).length;
+            document.getElementById('statWithPhotos').textContent = withPhotos;
+            
+            // Recent intakes (last 7 days)
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            
+            const recentIntakes = allRecords.filter(record => {
+                if (record.intakeDate) {
+                    const intakeDate = new Date(record.intakeDate);
+                    return intakeDate >= sevenDaysAgo && intakeDate <= today;
+                }
+                return false;
+            }).length;
+            
+            document.getElementById('statRecent').textContent = recentIntakes;
+            
+            // Total photos
+            const totalPhotos = allRecords.reduce((sum, record) => {
+                return sum + (parseInt(record.photoCount) || 0);
+            }, 0);
+            
+            document.getElementById('statTotalPhotos').textContent = totalPhotos;
         }
         
         function displayRecords(records) {
