@@ -1318,7 +1318,7 @@
         };
         
         const DROPBOX_OAUTH_CONFIG = {
-            clientId: 'bvvotc2lattvdar',
+            clientId: 'YOUR_DROPBOX_APP_KEY_HERE',
             redirectUri: window.location.origin + window.location.pathname,
             authEndpoint: 'https://www.dropbox.com/oauth2/authorize',
             tokenEndpoint: 'https://api.dropboxapi.com/oauth2/token'
@@ -1500,18 +1500,24 @@
             const code = urlParams.get('code');
             const error = urlParams.get('error');
             
+            // Only handle if this is a Google OAuth callback (check for Google verifier)
+            const codeVerifier = sessionStorage.getItem('animalops_code_verifier');
+            if (!codeVerifier && code) {
+                // Not a Google callback, skip
+                return;
+            }
+            
             if (error) {
                 alert(`Authorization failed: ${error}`);
                 window.history.replaceState({}, document.title, window.location.pathname);
                 return;
             }
             
-            if (code) {
+            if (code && codeVerifier) {
                 // Exchange code for tokens
-                const codeVerifier = sessionStorage.getItem('animalops_code_verifier');
                 const spreadsheetId = sessionStorage.getItem('animalops_spreadsheet_id');
                 
-                if (!codeVerifier) {
+                if (!spreadsheetId) {
                     alert('OAuth state lost. Please try signing in again.');
                     window.history.replaceState({}, document.title, window.location.pathname);
                     return;
@@ -1761,8 +1767,10 @@
             const code = urlParams.get('code');
             const error = urlParams.get('error');
             
-            // Skip if this is a Google OAuth callback
-            if (urlParams.has('scope') && !urlParams.has('code')) {
+            // Only handle if this is a Dropbox OAuth callback (check for Dropbox verifier)
+            const codeVerifier = sessionStorage.getItem('animalops_dropbox_code_verifier');
+            if (!codeVerifier && code) {
+                // Not a Dropbox callback, skip
                 return;
             }
             
@@ -1772,8 +1780,7 @@
                 return;
             }
             
-            if (code && sessionStorage.getItem('animalops_dropbox_code_verifier')) {
-                const codeVerifier = sessionStorage.getItem('animalops_dropbox_code_verifier');
+            if (code && codeVerifier) {
                 const folder = sessionStorage.getItem('animalops_dropbox_folder') || '/AnimalOps';
                 
                 try {
