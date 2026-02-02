@@ -1018,6 +1018,9 @@
                     <button type="button" class="btn btn-outline" onclick="document.getElementById('photos').click()">
                         <span>📁 Upload Photos</span>
                     </button>
+                    <button type="button" class="btn btn-outline" id="syncPhotosBtn" onclick="syncPhotosFromCloud()" style="display: none;">
+                        <span>🔄 Sync Photos from Cloud</span>
+                    </button>
                 </div>
                 <input type="file" id="photos" accept="image/*" multiple style="display: none;">
                 
@@ -1037,6 +1040,29 @@
                                 </button>
                                 <button type="button" class="btn btn-outline" onclick="closeCamera()">
                                     <span>Cancel</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Photo Sync Modal -->
+                <div id="photoSyncModal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 900px;">
+                        <div class="modal-header">
+                            <h2>Sync Photos from Cloud Storage</h2>
+                            <button class="close-btn" onclick="closePhotoSync()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="photoSyncContent" style="min-height: 200px;">
+                                <p style="text-align: center; padding: 2rem;">Loading photos from cloud storage...</p>
+                            </div>
+                            <div style="margin-top: 1.5rem; text-align: right; border-top: 1px solid var(--border); padding-top: 1rem;">
+                                <button type="button" class="btn btn-outline" onclick="closePhotoSync()">
+                                    <span>Cancel</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="addSelectedPhotosBtn" onclick="addSelectedPhotos()" style="display: none;">
+                                    <span>Add Selected Photos</span>
                                 </button>
                             </div>
                         </div>
@@ -2086,6 +2112,11 @@
             document.getElementById('healthNotes').value = record.healthNotes;
             document.getElementById('behaviorNotes').value = record.behaviorNotes;
             
+            // Show sync photos button (only shows when editing and cloud storage is connected)
+            if (config.dropbox.connected || config.onedrive.connected || config.drive.connected) {
+                document.getElementById('syncPhotosBtn').style.display = 'inline-block';
+            }
+            
             // Change submit button to "Update"
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.innerHTML = '<span>💾 Update Animal Record</span>';
@@ -2653,6 +2684,228 @@
             selectedPhotos.splice(index, 1);
             updatePhotoPreview();
         }
+        
+        // Photo sync functionality
+        let cloudPhotosToAdd = [];
+        
+        async function syncPhotosFromCloud() {
+            if (!currentEditRow) {
+                alert('Please edit an animal record first before syncing photos.');
+                return;
+            }
+            
+            const record = allRecords.find(r => r.rowIndex === currentEditRow);
+            if (!record || !record.animalId) {
+                alert('Animal ID not found. Cannot sync photos.');
+                return;
+            }
+            
+            const modal = document.getElementById('photoSyncModal');
+            const content = document.getElementById('photoSyncContent');
+            
+            modal.style.display = 'flex';
+            content.innerHTML = '<p style="text-align: center; padding: 2rem;">Loading photos from cloud storage...</p>';
+            
+            try {
+                let cloudPhotos = [];
+                
+                // Get photos from the connected cloud storage
+                if (config.dropbox.connected) {
+                    cloudPhotos = await getDropboxPhotos(record.animalId);
+                } else if (config.drive.connected) {
+                    cloudPhotos = await getGoogleDrivePhotos(record.animalId);
+                } else if (config.onedrive.connected) {
+                    alert('OneDrive photo sync is not yet implemented. Please use Dropbox or Google Drive.');
+                    closePhotoSync();
+                    return;
+                }
+                
+                // Get existing photo links from the record
+                const existingLinks = record.photoLinks ? record.photoLinks.split(',').map(l => l.trim()).filter(l => l) : [];
+                
+                // Filter to only show new photos not already in the record
+                const newPhotos = cloudPhotos.filter(photo => {
+                    return !existingLinks.some(link => {
+                        // Check if this photo link or path is already in the record
+                        return link.includes(photo.name) || link === photo.link || link.startsWith('DROPBOX:') && link.includes(photo.path);
+                    });
+                });
+                
+                if (newPhotos.length === 0) {
+                    content.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No new photos found in cloud storage. All photos are already synced!</p>';
+                    return;
+                }
+                
+                // Display photos with checkboxes
+                cloudPhotosToAdd = newPhotos;
+                
+                let photosHTML = `
+                    <p style="margin-bottom: 1rem;"><strong>Found ${newPhotos.length} new photo(s)</strong> in folder <code>${record.animalId}</code></p>
+                    <p style="margin-bottom: 1rem; color: var(--text-light);">Select the photos you want to add to this animal's record:</p>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
+                `;
+                
+                newPhotos.forEach((photo, index) => {
+                    photosHTML += `
+                        <div style="text-align: center; border: 2px solid var(--border); border-radius: 8px; padding: 0.5rem;">
+                            <input type="checkbox" id="photoCheck${index}" checked style="margin-bottom: 0.5rem;">
+                            <div style="font-size: 0.85rem; word-break: break-word;">${photo.name}</div>
+                        </div>
+                    `;
+                });
+                
+                photosHTML += '</div>';
+                content.innerHTML = photosHTML;
+                
+                // Show add button
+                document.getElementById('addSelectedPhotosBtn').style.display = 'inline-block';
+                
+            } catch (error) {
+                content.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--error);">Error loading photos: ${error.message}</p>`;
+            }
+        }
+        
+        async function getDropboxPhotos(animalId) {
+            const folder = `${config.dropbox.folder}/${animalId}`;
+            
+            try {
+                const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${config.dropbox.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        path: folder
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Folder not found or empty');
+                }
+                
+                const data = await response.json();
+                
+                // Filter for image files only
+                return data.entries
+                    .filter(entry => entry['.tag'] === 'file' && /\.(jpg|jpeg|png|gif|webp)$/i.test(entry.name))
+                    .map(entry => ({
+                        name: entry.name,
+                        path: entry.path_display,
+                        link: `DROPBOX:${entry.path_display}` // Store as DROPBOX: path for later fetching
+                    }));
+                    
+            } catch (error) {
+                throw new Error(`Could not access Dropbox folder: ${error.message}`);
+            }
+        }
+        
+        async function getGoogleDrivePhotos(animalId) {
+            // Search for the animal folder
+            try {
+                const searchResponse = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=name='${animalId}' and '${config.drive.folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+                
+                const searchData = await searchResponse.json();
+                
+                if (!searchData.files || searchData.files.length === 0) {
+                    throw new Error('Folder not found');
+                }
+                
+                const folderId = searchData.files[0].id;
+                
+                // List files in the folder
+                const filesResponse = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and mimeType contains 'image/' and trashed=false&fields=files(id,name,webContentLink,webViewLink)`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+                
+                const filesData = await filesResponse.json();
+                
+                return filesData.files.map(file => ({
+                    name: file.name,
+                    path: file.id,
+                    link: file.webContentLink || file.webViewLink
+                }));
+                
+            } catch (error) {
+                throw new Error(`Could not access Google Drive folder: ${error.message}`);
+            }
+        }
+        
+        function closePhotoSync() {
+            document.getElementById('photoSyncModal').style.display = 'none';
+            document.getElementById('addSelectedPhotosBtn').style.display = 'none';
+            cloudPhotosToAdd = [];
+        }
+        
+        function addSelectedPhotos() {
+            const record = allRecords.find(r => r.rowIndex === currentEditRow);
+            if (!record) return;
+            
+            // Get selected photos
+            const selectedCloudPhotos = [];
+            cloudPhotosToAdd.forEach((photo, index) => {
+                const checkbox = document.getElementById(`photoCheck${index}`);
+                if (checkbox && checkbox.checked) {
+                    selectedCloudPhotos.push(photo.link);
+                }
+            });
+            
+            if (selectedCloudPhotos.length === 0) {
+                alert('Please select at least one photo to add.');
+                return;
+            }
+            
+            // Get existing photo links
+            const existingLinks = record.photoLinks ? record.photoLinks.split(',').map(l => l.trim()).filter(l => l) : [];
+            
+            // Combine existing and new
+            const allLinks = [...existingLinks, ...selectedCloudPhotos];
+            const newPhotoCount = allLinks.length;
+            
+            // Update the record in Google Sheets
+            const rowData = [
+                record.timestamp,
+                record.internalId,
+                record.name,
+                record.species,
+                record.breed,
+                record.age,
+                record.gender,
+                record.intakeDate,
+                record.animalId,
+                record.buildingId,
+                record.color,
+                record.bodyConditionScore,
+                record.healthNotes,
+                record.behaviorNotes,
+                allLinks.join(', '),
+                newPhotoCount
+            ];
+            
+            updateGoogleSheetsRow(currentEditRow, rowData)
+                .then(() => {
+                    alert(`Successfully added ${selectedCloudPhotos.length} photo(s)!`);
+                    // Update local record
+                    record.photoLinks = allLinks.join(', ');
+                    record.photoCount = newPhotoCount;
+                    closePhotoSync();
+                })
+                .catch(error => {
+                    alert(`Error updating record: ${error.message}`);
+                });
+        }
 
         function resetForm() {
             document.getElementById('animalForm').reset();
@@ -2661,6 +2914,7 @@
             document.getElementById('photoPreview').innerHTML = '';
             currentEditRow = null;
             document.getElementById('submitBtn').innerHTML = '<span>💾 Save Animal Record</span>';
+            document.getElementById('syncPhotosBtn').style.display = 'none';
         }
 
         // Help system
