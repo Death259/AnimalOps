@@ -2117,12 +2117,124 @@
                 document.getElementById('syncPhotosBtn').style.display = 'inline-block';
             }
             
+            // Load and display existing photos
+            await loadExistingPhotos(record);
+            
             // Change submit button to "Update"
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.innerHTML = '<span>💾 Update Animal Record</span>';
             
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        async function loadExistingPhotos(record) {
+            const photoPreview = document.getElementById('photoPreview');
+            
+            if (!record.photoLinks || !record.photoLinks.trim()) {
+                photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">No photos for this animal yet.</p>';
+                return;
+            }
+            
+            const photoUrls = record.photoLinks.split(',').map(url => url.trim()).filter(url => url);
+            
+            if (photoUrls.length === 0) {
+                photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">No photos for this animal yet.</p>';
+                return;
+            }
+            
+            photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">Loading existing photos...</p>';
+            
+            // Fetch actual URLs for Dropbox paths
+            const displayUrls = [];
+            for (let photoUrl of photoUrls) {
+                if (photoUrl.startsWith('DROPBOX:')) {
+                    const dropboxPath = photoUrl.replace('DROPBOX:', '');
+                    try {
+                        const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${config.dropbox.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                path: dropboxPath
+                            })
+                        });
+                        
+                        if (tempLinkResponse.ok) {
+                            const tempLinkData = await tempLinkResponse.json();
+                            displayUrls.push(tempLinkData.link);
+                        } else {
+                            displayUrls.push(null); // Failed to load
+                        }
+                    } catch (error) {
+                        console.error('Error fetching Dropbox temp link:', error);
+                        displayUrls.push(null);
+                    }
+                } else if (photoUrl.includes('dropbox.com')) {
+                    // Convert old-style Dropbox URLs
+                    let convertedUrl = photoUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+                    convertedUrl = convertedUrl.replace('?dl=0', '');
+                    convertedUrl = convertedUrl.replace('?dl=1', '');
+                    displayUrls.push(convertedUrl);
+                } else {
+                    // Google Drive, OneDrive, or other URLs
+                    displayUrls.push(photoUrl);
+                }
+            }
+            
+            // Display thumbnails
+            let photosHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">';
+            
+            displayUrls.forEach((url, index) => {
+                if (url) {
+                    photosHTML += `
+                        <div style="position: relative; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light); cursor: pointer;" onclick="viewPhotoLarge('${url.replace(/'/g, "\\'")}')">
+                            <img src="${url}" 
+                                 alt="Photo ${index + 1}" 
+                                 style="width: 100%; height: 150px; object-fit: cover;"
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            <div style="display: none; height: 150px; align-items: center; justify-content: center; color: var(--text-light); font-size: 0.85rem;">
+                                Failed to load
+                            </div>
+                            <div style="padding: 0.5rem; text-align: center; background: white;">
+                                <small>Photo ${index + 1}</small>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    photosHTML += `
+                        <div style="border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light);">
+                            <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: var(--text-light);">
+                                Failed to load
+                            </div>
+                            <div style="padding: 0.5rem; text-align: center; background: white;">
+                                <small>Photo ${index + 1}</small>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            photosHTML += '</div>';
+            photosHTML += '<p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; text-align: center;">Click any photo to view larger. Add more photos using the buttons above.</p>';
+            
+            photoPreview.innerHTML = photosHTML;
+        }
+        
+        function viewPhotoLarge(url) {
+            // Create a modal to view the photo larger
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 10000; cursor: pointer;';
+            modal.onclick = () => modal.remove();
+            
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain;';
+            
+            modal.appendChild(img);
+            document.body.appendChild(modal);
         }
 
         // Photo handling
