@@ -1847,25 +1847,14 @@
             
             const folder = document.getElementById('dropboxFolder').value.trim() || '/AnimalOps';
             
-            // Save folder preference (both sessionStorage and localStorage for redundancy)
+            // Save folder preference
             sessionStorage.setItem('animalops_dropbox_folder', folder);
-            localStorage.setItem('animalops_dropbox_folder_temp', folder);
             
-            // Generate PKCE parameters for Dropbox
-            const codeVerifier = generateCodeVerifier();
-            const codeChallenge = await generateCodeChallenge(codeVerifier);
-            
-            // Save verifier for later (both storages for redundancy)
-            sessionStorage.setItem('animalops_dropbox_code_verifier', codeVerifier);
-            localStorage.setItem('animalops_dropbox_code_verifier_temp', codeVerifier);
-            
-            // Dropbox OAuth with PKCE
+            // Dropbox OAuth - use simple token flow (returns token directly in hash)
             const params = new URLSearchParams({
                 client_id: DROPBOX_OAUTH_CONFIG.clientId,
                 redirect_uri: DROPBOX_OAUTH_CONFIG.redirectUri,
-                response_type: 'code',
-                code_challenge: codeChallenge,
-                code_challenge_method: 'S256',
+                response_type: 'token', // Simple flow - token in URL hash
                 token_access_type: 'offline' // Request refresh token
             });
             
@@ -1876,101 +1865,56 @@
         }
         
         async function handleDropboxOAuthCallback() {
-            // Dropbox returns code in URL params (not hash)
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const error = urlParams.get('error');
-            
-            // Try to get verifier from sessionStorage first, then localStorage as backup
-            let codeVerifier = sessionStorage.getItem('animalops_dropbox_code_verifier');
-            if (!codeVerifier) {
-                codeVerifier = localStorage.getItem('animalops_dropbox_code_verifier_temp');
-            }
-            
-            if (!codeVerifier && code) {
-                // Check if this might be a Dropbox callback (not Google)
-                // Google callbacks will have 'scope' parameter, Dropbox won't
-                if (!urlParams.has('scope')) {
-                    alert('Dropbox OAuth state lost. Please try signing in to Dropbox again.\n\nNote: Make sure you complete the sign-in without closing or refreshing the page.');
+            // Dropbox returns token in URL hash (#) for simple flow
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const accessToken = params.get('access_token');
+                const expiresIn = params.get('expires_in');
+                const error = params.get('error');
+                
+                if (error) {
+                    alert(`Dropbox authorization failed: ${error}`);
                     window.history.replaceState({}, document.title, window.location.pathname);
-                }
-                return;
-            }
-            
-            if (error) {
-                alert(`Dropbox authorization failed: ${error}`);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                return;
-            }
-            
-            if (code && codeVerifier) {
-                let folder = sessionStorage.getItem('animalops_dropbox_folder');
-                if (!folder) {
-                    folder = localStorage.getItem('animalops_dropbox_folder_temp') || '/AnimalOps';
+                    return;
                 }
                 
-                try {
-                    // Exchange code for tokens
-                    const tokenResponse = await fetch(DROPBOX_OAUTH_CONFIG.tokenEndpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: new URLSearchParams({
-                            code: code,
-                            grant_type: 'authorization_code',
-                            code_verifier: codeVerifier,
-                            client_id: DROPBOX_OAUTH_CONFIG.clientId,
-                            redirect_uri: DROPBOX_OAUTH_CONFIG.redirectUri
-                        })
-                    });
+                if (accessToken) {
+                    const folder = sessionStorage.getItem('animalops_dropbox_folder') || '/AnimalOps';
                     
-                    if (!tokenResponse.ok) {
-                        const errorText = await tokenResponse.text();
-                        console.error('Dropbox token exchange error:', errorText);
-                        throw new Error(`Failed to exchange code for tokens: ${tokenResponse.status}`);
+                    try {
+                        // Save tokens and config
+                        config.dropbox.connected = true;
+                        config.dropbox.token = accessToken;
+                        config.dropbox.folder = folder;
+                        
+                        if (expiresIn) {
+                            config.dropbox.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
+                        }
+                        
+                        saveConfig();
+                        
+                        // Update UI
+                        document.getElementById('dropboxStatus').textContent = 'Connected';
+                        document.getElementById('dropboxStatus').className = 'status-badge connected';
+                        document.getElementById('dropboxConfig').classList.add('connected');
+                        document.getElementById('dropboxFolder').value = folder;
+                        document.getElementById('dropboxConnectionInfo').style.display = 'block';
+                        
+                        checkReadyState();
+                        
+                        // Clean up
+                        sessionStorage.removeItem('animalops_dropbox_folder');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        
+                        alert('Successfully connected to Dropbox!');
+                        
+                    } catch (error) {
+                        console.error('Dropbox OAuth error:', error);
+                        alert(`Failed to connect to Dropbox: ${error.message}`);
+                        sessionStorage.removeItem('animalops_dropbox_folder');
+                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
-                    
-                    const tokens = await tokenResponse.json();
-                    
-                    // Save tokens and config
-                    config.dropbox.connected = true;
-                    config.dropbox.token = tokens.access_token;
-                    config.dropbox.refreshToken = tokens.refresh_token;
-                    config.dropbox.folder = folder;
-                    
-                    if (tokens.expires_in) {
-                        config.dropbox.expiresAt = Date.now() + (tokens.expires_in * 1000);
-                    }
-                    
-                    saveConfig();
-                    
-                    // Update UI
-                    document.getElementById('dropboxStatus').textContent = 'Connected';
-                    document.getElementById('dropboxStatus').className = 'status-badge connected';
-                    document.getElementById('dropboxConfig').classList.add('connected');
-                    document.getElementById('dropboxFolder').value = folder;
-                    document.getElementById('dropboxConnectionInfo').style.display = 'block';
-                    
-                    checkReadyState();
-                    
-                    // Clean up
-                    sessionStorage.removeItem('animalops_dropbox_folder');
-                    sessionStorage.removeItem('animalops_dropbox_code_verifier');
-                    localStorage.removeItem('animalops_dropbox_folder_temp');
-                    localStorage.removeItem('animalops_dropbox_code_verifier_temp');
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    alert('Successfully connected to Dropbox!');
-                    
-                } catch (error) {
-                    console.error('Dropbox OAuth error:', error);
-                    alert(`Failed to connect to Dropbox: ${error.message}`);
-                    sessionStorage.removeItem('animalops_dropbox_folder');
-                    sessionStorage.removeItem('animalops_dropbox_code_verifier');
-                    localStorage.removeItem('animalops_dropbox_folder_temp');
-                    localStorage.removeItem('animalops_dropbox_code_verifier_temp');
-                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
         }
