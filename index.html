@@ -1310,7 +1310,7 @@
     <script>
         // OAuth Configuration - YOU NEED TO UPDATE THESE VALUES
         const OAUTH_CONFIG = {
-            clientId: '365835275822-6jcrgv1ak2902kk5f5l9c1do9gle96d1.apps.googleusercontent.com',
+            clientId: '365835275822-kds4lbq9stu5ov9qt9cddq2v3ck3dkgl.apps.googleusercontent.com',
             // Web Application client - supports PKCE without client_secret!
             redirectUri: 'https://death259.github.io/AnimalOps/',
             scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
@@ -1471,23 +1471,15 @@
             // Save spreadsheet ID
             sessionStorage.setItem('animalops_spreadsheet_id', spreadsheetId);
             
-            // Generate PKCE parameters
-            const codeVerifier = generateCodeVerifier();
-            const codeChallenge = await generateCodeChallenge(codeVerifier);
-            
-            // Save verifier for later
-            sessionStorage.setItem('animalops_code_verifier', codeVerifier);
-            
-            // Build authorization URL
+            // Use implicit flow - gets token directly in URL fragment
+            // This doesn't require client secret!
             const params = new URLSearchParams({
                 client_id: OAUTH_CONFIG.clientId,
-                //redirect_uri: OAUTH_CONFIG.redirectUri,
-                response_type: 'code',
+                redirect_uri: OAUTH_CONFIG.redirectUri,
+                response_type: 'token', // Implicit flow - token comes directly
                 scope: OAUTH_CONFIG.scopes,
-                code_challenge: codeChallenge,
-                code_challenge_method: 'S256',
-                access_type: 'offline',
-                prompt: 'consent'
+                include_granted_scopes: 'true',
+                state: 'google_sheets_oauth'
             });
             
             const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
@@ -1497,6 +1489,81 @@
         }
         
         async function handleOAuthCallback() {
+            // Check for implicit flow response (token in URL hash #)
+            if (window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const accessToken = params.get('access_token');
+                const expiresIn = params.get('expires_in');
+                const state = params.get('state');
+                const error = params.get('error');
+                
+                if (error) {
+                    alert(`Authorization failed: ${error}`);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                }
+                
+                if (accessToken && state === 'google_sheets_oauth') {
+                    const spreadsheetId = sessionStorage.getItem('animalops_spreadsheet_id');
+                    
+                    if (!spreadsheetId) {
+                        alert('OAuth state lost. Please try signing in again.');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        return;
+                    }
+                    
+                    try {
+                        // Get user email
+                        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`
+                            }
+                        });
+                        
+                        const userInfo = await userInfoResponse.json();
+                        
+                        // Save tokens and config
+                        config.sheets.connected = true;
+                        config.sheets.token = accessToken;
+                        // Note: Implicit flow doesn't provide refresh tokens
+                        config.sheets.refreshToken = null;
+                        config.sheets.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
+                        config.sheets.spreadsheetId = spreadsheetId;
+                        config.sheets.userEmail = userInfo.email;
+                        
+                        saveConfig();
+                        
+                        // Update UI
+                        document.getElementById('sheetsStatus').textContent = 'Connected';
+                        document.getElementById('sheetsStatus').className = 'status-badge connected';
+                        document.getElementById('sheetsConfig').classList.add('connected');
+                        document.getElementById('sheetsId').value = spreadsheetId;
+                        document.getElementById('sheetsConnectionInfo').style.display = 'block';
+                        document.getElementById('sheetsUserEmail').textContent = userInfo.email;
+                        
+                        // Initialize headers
+                        await initializeSheetHeaders();
+                        
+                        checkReadyState();
+                        
+                        // Clean up
+                        sessionStorage.removeItem('animalops_spreadsheet_id');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        
+                        alert('Successfully connected to Google Sheets!\n\nNote: You\'ll need to re-sign in after about 1 hour when the token expires.');
+                        
+                    } catch (error) {
+                        console.error('OAuth error:', error);
+                        alert(`Failed to connect: ${error.message}`);
+                        sessionStorage.removeItem('animalops_spreadsheet_id');
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                    return;
+                }
+            }
+            
+            // Old PKCE code flow (keeping for reference, but shouldn't be used now)
             const urlParams = new URLSearchParams(window.location.search);
             const code = urlParams.get('code');
             const error = urlParams.get('error');
