@@ -2,72 +2,83 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Google Sheets Picker (PKCE)</title>
+  <title>Google Sheets PKCE Demo</title>
+
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    button { padding: 10px 14px; }
-    ul { margin-top: 20px; }
-    li { cursor: pointer; margin: 6px 0; }
-    li:hover { background: #eee; }
-    #output { margin-top: 20px; font-weight: bold; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 600px;
+    }
+    button {
+      padding: 10px 16px;
+      font-size: 14px;
+    }
+    ul {
+      margin-top: 20px;
+      padding-left: 0;
+    }
+    li {
+      list-style: none;
+      padding: 8px;
+      border-bottom: 1px solid #ddd;
+      cursor: pointer;
+    }
+    li:hover {
+      background: #f3f3f3;
+    }
+    #selected {
+      margin-top: 20px;
+      font-weight: bold;
+      color: #0b5;
+    }
   </style>
 </head>
 <body>
 
-<h2>Google Sheets Picker (PKCE)</h2>
+<h2>Pick a Google Sheet</h2>
+
 <button id="login">Sign in with Google</button>
 
-<ul id="files"></ul>
-<div id="output"></div>
+<ul id="sheetList"></ul>
+
+<div id="selected"></div>
 
 <script>
-const clientId = "365835275822-kds4lbq9stu5ov9qt9cddq2v3ck3dkgl.apps.googleusercontent.com";
+/* =======================
+   CONFIG
+======================= */
+const clientId = "YOUR_CLIENT_ID_HERE";
 const redirectUri = "https://death259.github.io/AnimalOps/pkce_test.html";
 const scope = "https://www.googleapis.com/auth/drive.metadata.readonly";
+
 const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
 const tokenEndpoint = "https://oauth2.googleapis.com/token";
 
-document.getElementById("login").onclick = async () => {
-  console.log("Login button clicked");
-
-  const verifier = generateCodeVerifier();
-  const challenge = await generateCodeChallenge(verifier);
-  sessionStorage.setItem("pkce_verifier", verifier);
-
-  const params = new URLSearchParams({
-    client_id: clientId,
-    response_type: "code",
-    redirect_uri: redirectUri,
-    scope,
-    code_challenge: challenge,
-    code_challenge_method: "S256",
-    access_type: "online",
-    prompt: "consent"
-  });
-
-  const url = `${authEndpoint}?${params.toString()}`;
-  console.log("Redirecting to:", url);
-
-  window.location.href = url;
-};
-
-
-// ---------- PKCE helpers ----------
+/* =======================
+   PKCE HELPERS
+======================= */
 function generateCodeVerifier() {
   const array = new Uint8Array(32);
   crypto.getRandomValues(array);
   return btoa(String.fromCharCode(...array))
-    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 async function generateCodeChallenge(verifier) {
   const data = new TextEncoder().encode(verifier);
   const digest = await crypto.subtle.digest("SHA-256", data);
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
-    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
-// ---------- OAuth flow ----------
+/* =======================
+   LOGIN FLOW
+======================= */
 document.getElementById("login").onclick = async () => {
   const verifier = generateCodeVerifier();
   const challenge = await generateCodeChallenge(verifier);
@@ -80,14 +91,15 @@ document.getElementById("login").onclick = async () => {
     scope,
     code_challenge: challenge,
     code_challenge_method: "S256",
-    access_type: "online",
     prompt: "consent"
   });
 
-  window.location = `${authEndpoint}?${params.toString()}`;
+  window.location.href = `${authEndpoint}?${params.toString()}`;
 };
 
-// ---------- Handle redirect ----------
+/* =======================
+   HANDLE REDIRECT
+======================= */
 async function handleRedirect() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get("code");
@@ -110,33 +122,43 @@ async function handleRedirect() {
   });
 
   const tokenData = await tokenResponse.json();
-  loadSheets(tokenData.access_token);
   history.replaceState({}, document.title, redirectUri);
+
+  loadSheets(tokenData.access_token);
 }
 
-// ---------- Drive API ----------
-async function loadSheets(token) {
-  const res = await fetch(
+/* =======================
+   LOAD GOOGLE SHEETS
+======================= */
+async function loadSheets(accessToken) {
+  const response = await fetch(
     "https://www.googleapis.com/drive/v3/files" +
     "?q=mimeType='application/vnd.google-apps.spreadsheet'" +
     "&fields=files(id,name)",
     {
       headers: {
-        Authorization: `Bearer ${token}`
+        Authorization: `Bearer ${accessToken}`
       }
     }
   );
 
-  const data = await res.json();
-  const list = document.getElementById("files");
+  const data = await response.json();
+  const list = document.getElementById("sheetList");
+  list.innerHTML = "";
 
-  data.files.forEach(file => {
+  if (!data.files || data.files.length === 0) {
+    list.innerHTML = "<li>No spreadsheets found</li>";
+    return;
+  }
+
+  data.files.forEach(sheet => {
     const li = document.createElement("li");
-    li.textContent = file.name;
+    li.textContent = sheet.name;
     li.onclick = () => {
-      document.getElementById("output").textContent =
-        `Selected Spreadsheet ID: ${file.id}`;
-      console.log("Spreadsheet ID:", file.id);
+      document.getElementById("selected").textContent =
+        `Selected Spreadsheet ID: ${sheet.id}`;
+
+      console.log("Spreadsheet ID:", sheet.id);
     };
     list.appendChild(li);
   });
