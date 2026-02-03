@@ -1865,12 +1865,19 @@
         
         async function handleDropboxOAuthCallback() {
             // Dropbox returns token in URL hash (#) for simple flow
+            // Check if this is specifically a Dropbox callback (has access_token but NOT state='google_sheets_oauth')
             if (window.location.hash && window.location.hash.includes('access_token')) {
                 const hash = window.location.hash.substring(1);
                 const params = new URLSearchParams(hash);
                 const accessToken = params.get('access_token');
                 const expiresIn = params.get('expires_in');
+                const state = params.get('state');
                 const error = params.get('error');
+                
+                // Skip if this is a Google callback (has state='google_sheets_oauth')
+                if (state === 'google_sheets_oauth') {
+                    return;
+                }
                 
                 if (error) {
                     alert(`Dropbox authorization failed: ${error}`);
