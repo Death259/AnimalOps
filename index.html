@@ -1311,6 +1311,7 @@
         // OAuth Configuration - YOU NEED TO UPDATE THESE VALUES
         const OAUTH_CONFIG = {
             clientId: '365835275822-kds4lbq9stu5ov9qt9cddq2v3ck3dkgl.apps.googleusercontent.com',
+            // No client secret needed for PKCE flow!
             redirectUri: window.location.origin + window.location.pathname,
             scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
             authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
@@ -1531,6 +1532,7 @@
                         },
                         body: new URLSearchParams({
                             client_id: OAUTH_CONFIG.clientId,
+                            // No client_secret - using PKCE instead!
                             code: code,
                             code_verifier: codeVerifier,
                             grant_type: 'authorization_code',
@@ -1609,6 +1611,7 @@
                     },
                     body: new URLSearchParams({
                         client_id: OAUTH_CONFIG.clientId,
+                        // No client_secret needed for PKCE!
                         refresh_token: config.sheets.refreshToken,
                         grant_type: 'refresh_token'
                     })
