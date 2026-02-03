@@ -1308,14 +1308,16 @@
     </footer>
 
     <script>
-        // OAuth Configuration - YOU NEED TO UPDATE THESE VALUES
+        // OAuth Configuration
         const OAUTH_CONFIG = {
-            clientId: '365835275822-kds4lbq9stu5ov9qt9cddq2v3ck3dkgl.apps.googleusercontent.com',
-            // Web Application client - supports PKCE without client_secret!
+            clientId: '365835275822-kpaa6kkf6dc1t51ep91eaon04eave6eh.apps.googleusercontent.com',
+            // PKCE flow - no client secret needed!
             redirectUri: 'https://death259.github.io/AnimalOps/',
             scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email',
             authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-            tokenEndpoint: 'https://oauth2.googleapis.com/token'
+            tokenEndpoint: 'https://oauth2.googleapis.com/token',
+            // Flow preference: 'pkce' or 'implicit'
+            preferredFlow: 'pkce' // Try PKCE first (gives refresh tokens)
         };
         
         const DROPBOX_OAUTH_CONFIG = {
@@ -1455,7 +1457,7 @@
             localStorage.setItem('animalops_dropbox_config', JSON.stringify(config.dropbox));
         }
         
-        async function signInWithGoogle() {
+        async function signInWithGoogle(useImplicitFlow = false) {
             if (!OAUTH_CONFIG.clientId || OAUTH_CONFIG.clientId.includes('YOUR_CLIENT_ID')) {
                 alert('OAuth is not configured yet. Please see the setup instructions in the documentation.\n\nFor now, you can use "Use manual token instead" below.');
                 return;
@@ -1471,21 +1473,47 @@
             // Save spreadsheet ID
             sessionStorage.setItem('animalops_spreadsheet_id', spreadsheetId);
             
-            // Use implicit flow - gets token directly in URL fragment
-            // This doesn't require client secret!
-            const params = new URLSearchParams({
-                client_id: OAUTH_CONFIG.clientId,
-                redirect_uri: OAUTH_CONFIG.redirectUri,
-                response_type: 'token', // Implicit flow - token comes directly
-                scope: OAUTH_CONFIG.scopes,
-                include_granted_scopes: 'true',
-                state: 'google_sheets_oauth'
-            });
+            // Determine which flow to use
+            const usePKCE = !useImplicitFlow && OAUTH_CONFIG.preferredFlow === 'pkce';
             
-            const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
-            
-            // Redirect to Google for authorization
-            window.location.href = authUrl;
+            if (usePKCE) {
+                // PKCE Flow - gives refresh tokens!
+                const codeVerifier = generateCodeVerifier();
+                const codeChallenge = await generateCodeChallenge(codeVerifier);
+                
+                // Save verifier for later
+                sessionStorage.setItem('animalops_code_verifier', codeVerifier);
+                sessionStorage.setItem('animalops_oauth_flow', 'pkce');
+                
+                const params = new URLSearchParams({
+                    client_id: OAUTH_CONFIG.clientId,
+                    redirect_uri: OAUTH_CONFIG.redirectUri,
+                    response_type: 'code',
+                    scope: OAUTH_CONFIG.scopes,
+                    code_challenge: codeChallenge,
+                    code_challenge_method: 'S256',
+                    access_type: 'offline',
+                    prompt: 'consent'
+                });
+                
+                const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
+                window.location.href = authUrl;
+            } else {
+                // Implicit Flow - no refresh tokens but simpler
+                sessionStorage.setItem('animalops_oauth_flow', 'implicit');
+                
+                const params = new URLSearchParams({
+                    client_id: OAUTH_CONFIG.clientId,
+                    redirect_uri: OAUTH_CONFIG.redirectUri,
+                    response_type: 'token',
+                    scope: OAUTH_CONFIG.scopes,
+                    include_granted_scopes: 'true',
+                    state: 'google_sheets_oauth'
+                });
+                
+                const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
+                window.location.href = authUrl;
+            }
         }
         
         async function handleOAuthCallback() {
@@ -1610,6 +1638,30 @@
                     if (!tokenResponse.ok) {
                         const errorData = await tokenResponse.json();
                         console.error('Token exchange error:', errorData);
+                        
+                        // Check if error is due to missing client secret
+                        if (errorData.error === 'invalid_request' && errorData.error_description && errorData.error_description.includes('client_secret')) {
+                            // Offer to try implicit flow instead
+                            const useImplicit = confirm(
+                                'PKCE flow requires additional Google Cloud Console configuration.\n\n' +
+                                'Would you like to try the Implicit flow instead?\n\n' +
+                                '• Implicit: Works now, token expires in ~1 hour\n' +
+                                '• PKCE: Needs configuration, but tokens auto-refresh\n\n' +
+                                'Click OK for Implicit, Cancel to stop.'
+                            );
+                            
+                            if (useImplicit) {
+                                // Switch to implicit flow
+                                sessionStorage.removeItem('animalops_code_verifier');
+                                window.history.replaceState({}, document.title, window.location.pathname);
+                                signInWithGoogle(true); // true = use implicit flow
+                                return;
+                            } else {
+                                window.history.replaceState({}, document.title, window.location.pathname);
+                                return;
+                            }
+                        }
+                        
                         throw new Error(`Failed to exchange code for tokens: ${errorData.error || 'Unknown error'}. ${errorData.error_description || ''}`);
                     }
                     
@@ -1650,9 +1702,10 @@
                     // Clean up
                     sessionStorage.removeItem('animalops_code_verifier');
                     sessionStorage.removeItem('animalops_spreadsheet_id');
+                    sessionStorage.removeItem('animalops_oauth_flow');
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
-                    alert('Successfully connected to Google Sheets!');
+                    alert('Successfully connected to Google Sheets!\n\nUsing PKCE flow with auto-refreshing tokens.');
                     
                 } catch (error) {
                     console.error('OAuth error:', error);
