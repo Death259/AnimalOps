@@ -1847,15 +1847,17 @@
             
             const folder = document.getElementById('dropboxFolder').value.trim() || '/AnimalOps';
             
-            // Save folder preference
+            // Save folder preference (both sessionStorage and localStorage for redundancy)
             sessionStorage.setItem('animalops_dropbox_folder', folder);
+            localStorage.setItem('animalops_dropbox_folder_temp', folder);
             
             // Generate PKCE parameters for Dropbox
             const codeVerifier = generateCodeVerifier();
             const codeChallenge = await generateCodeChallenge(codeVerifier);
             
-            // Save verifier for later
+            // Save verifier for later (both storages for redundancy)
             sessionStorage.setItem('animalops_dropbox_code_verifier', codeVerifier);
+            localStorage.setItem('animalops_dropbox_code_verifier_temp', codeVerifier);
             
             // Dropbox OAuth with PKCE
             const params = new URLSearchParams({
@@ -1879,10 +1881,19 @@
             const code = urlParams.get('code');
             const error = urlParams.get('error');
             
-            // Only handle if this is a Dropbox OAuth callback (check for Dropbox verifier)
-            const codeVerifier = sessionStorage.getItem('animalops_dropbox_code_verifier');
+            // Try to get verifier from sessionStorage first, then localStorage as backup
+            let codeVerifier = sessionStorage.getItem('animalops_dropbox_code_verifier');
+            if (!codeVerifier) {
+                codeVerifier = localStorage.getItem('animalops_dropbox_code_verifier_temp');
+            }
+            
             if (!codeVerifier && code) {
-                // Not a Dropbox callback, skip
+                // Check if this might be a Dropbox callback (not Google)
+                // Google callbacks will have 'scope' parameter, Dropbox won't
+                if (!urlParams.has('scope')) {
+                    alert('Dropbox OAuth state lost. Please try signing in to Dropbox again.\n\nNote: Make sure you complete the sign-in without closing or refreshing the page.');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
                 return;
             }
             
@@ -1893,7 +1904,10 @@
             }
             
             if (code && codeVerifier) {
-                const folder = sessionStorage.getItem('animalops_dropbox_folder') || '/AnimalOps';
+                let folder = sessionStorage.getItem('animalops_dropbox_folder');
+                if (!folder) {
+                    folder = localStorage.getItem('animalops_dropbox_folder_temp') || '/AnimalOps';
+                }
                 
                 try {
                     // Exchange code for tokens
@@ -1943,6 +1957,8 @@
                     // Clean up
                     sessionStorage.removeItem('animalops_dropbox_folder');
                     sessionStorage.removeItem('animalops_dropbox_code_verifier');
+                    localStorage.removeItem('animalops_dropbox_folder_temp');
+                    localStorage.removeItem('animalops_dropbox_code_verifier_temp');
                     window.history.replaceState({}, document.title, window.location.pathname);
                     
                     alert('Successfully connected to Dropbox!');
@@ -1952,6 +1968,8 @@
                     alert(`Failed to connect to Dropbox: ${error.message}`);
                     sessionStorage.removeItem('animalops_dropbox_folder');
                     sessionStorage.removeItem('animalops_dropbox_code_verifier');
+                    localStorage.removeItem('animalops_dropbox_folder_temp');
+                    localStorage.removeItem('animalops_dropbox_code_verifier_temp');
                     window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
