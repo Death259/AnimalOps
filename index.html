@@ -864,17 +864,26 @@
                                 Find this in your Google Sheet URL: docs.google.com/spreadsheets/d/<strong>SPREADSHEET_ID</strong>/edit
                             </p>
                             
-                            <div class="button-group" style="margin-top: 1rem;">
-                                <button class="btn btn-primary" onclick="signInWithGoogle()" id="googleSignInBtn">
-                                    <span>🔐 Sign in with Google</span>
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; margin-bottom: 0.5rem;">
+                                Choose your sign-in method:
+                            </p>
+                            
+                            <div class="button-group" style="margin-top: 0.5rem;">
+                                <button class="btn btn-primary" onclick="signInWithGoogle(false)" id="googleSignInPKCEBtn" title="Stays signed in with auto-refresh (may not work with all setups)">
+                                    <span>🔐 Sign in (PKCE)</span>
                                 </button>
-                                <button class="btn btn-outline" onclick="showHelp('sheets')">
-                                    <span>📖 Help</span>
+                                <button class="btn btn-secondary" onclick="signInWithGoogle(true)" id="googleSignInImplicitBtn" title="Simple sign-in, re-auth every hour">
+                                    <span>🔐 Sign in (Simple)</span>
                                 </button>
                             </div>
                             
+                            <p style="color: var(--text-light); font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">
+                                <strong>PKCE:</strong> Auto-refresh tokens (stays signed in) • <strong>Simple:</strong> Re-sign in every ~1 hour
+                            </p>
+                            
                             <div id="sheetsConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
                                 <p style="margin: 0; color: var(--success);"><strong>✓ Connected as:</strong> <span id="sheetsUserEmail"></span></p>
+                                <p style="margin: 0.5rem 0 0 0; color: var(--text-light); font-size: 0.85rem;"><span id="sheetsFlowType"></span></p>
                                 <button class="btn btn-outline" onclick="disconnectGoogleSheets()" style="margin-top: 0.5rem; font-size: 0.85rem;">
                                     <span>Disconnect</span>
                                 </button>
@@ -1322,7 +1331,7 @@
         
         const DROPBOX_OAUTH_CONFIG = {
             clientId: 'bvvotc2lattvdar',
-            redirectUri: window.location.origin + window.location.pathname,
+            redirectUri: 'https://death259.github.io/AnimalOps/',
             authEndpoint: 'https://www.dropbox.com/oauth2/authorize',
             tokenEndpoint: 'https://api.dropboxapi.com/oauth2/token'
         };
@@ -1569,6 +1578,7 @@
                         document.getElementById('sheetsId').value = spreadsheetId;
                         document.getElementById('sheetsConnectionInfo').style.display = 'block';
                         document.getElementById('sheetsUserEmail').textContent = userInfo.email;
+                        document.getElementById('sheetsFlowType').textContent = 'Using Simple flow (re-auth needed ~hourly)';
                         
                         // Initialize headers
                         await initializeSheetHeaders();
@@ -1638,31 +1648,7 @@
                     if (!tokenResponse.ok) {
                         const errorData = await tokenResponse.json();
                         console.error('Token exchange error:', errorData);
-                        
-                        // Check if error is due to missing client secret
-                        if (errorData.error === 'invalid_request' && errorData.error_description && errorData.error_description.includes('client_secret')) {
-                            // Offer to try implicit flow instead
-                            const useImplicit = confirm(
-                                'PKCE flow requires additional Google Cloud Console configuration.\n\n' +
-                                'Would you like to try the Implicit flow instead?\n\n' +
-                                '• Implicit: Works now, token expires in ~1 hour\n' +
-                                '• PKCE: Needs configuration, but tokens auto-refresh\n\n' +
-                                'Click OK for Implicit, Cancel to stop.'
-                            );
-                            
-                            if (useImplicit) {
-                                // Switch to implicit flow
-                                sessionStorage.removeItem('animalops_code_verifier');
-                                window.history.replaceState({}, document.title, window.location.pathname);
-                                signInWithGoogle(true); // true = use implicit flow
-                                return;
-                            } else {
-                                window.history.replaceState({}, document.title, window.location.pathname);
-                                return;
-                            }
-                        }
-                        
-                        throw new Error(`Failed to exchange code for tokens: ${errorData.error || 'Unknown error'}. ${errorData.error_description || ''}`);
+                        throw new Error(`PKCE flow failed: ${errorData.error || 'Unknown error'}. ${errorData.error_description || ''}\n\nTry using the "Sign in (Simple)" button instead.`);
                     }
                     
                     const tokens = await tokenResponse.json();
@@ -1693,6 +1679,7 @@
                     document.getElementById('sheetsId').value = spreadsheetId;
                     document.getElementById('sheetsConnectionInfo').style.display = 'block';
                     document.getElementById('sheetsUserEmail').textContent = userInfo.email;
+                    document.getElementById('sheetsFlowType').textContent = 'Using PKCE flow (auto-refresh, stays signed in)';
                     
                     // Initialize headers
                     await initializeSheetHeaders();
@@ -1925,7 +1912,9 @@
                     });
                     
                     if (!tokenResponse.ok) {
-                        throw new Error('Failed to exchange code for tokens');
+                        const errorText = await tokenResponse.text();
+                        console.error('Dropbox token exchange error:', errorText);
+                        throw new Error(`Failed to exchange code for tokens: ${tokenResponse.status}`);
                     }
                     
                     const tokens = await tokenResponse.json();
