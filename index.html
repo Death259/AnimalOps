@@ -1854,8 +1854,7 @@
             const params = new URLSearchParams({
                 client_id: DROPBOX_OAUTH_CONFIG.clientId,
                 redirect_uri: DROPBOX_OAUTH_CONFIG.redirectUri,
-                response_type: 'token', // Simple flow - token in URL hash
-                token_access_type: 'offline' // Request refresh token
+                response_type: 'token' // Simple flow - token in URL hash
             });
             
             const authUrl = `${DROPBOX_OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
