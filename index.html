@@ -858,26 +858,21 @@
                         <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data and records</p>
                         
                         <div id="sheetsOAuthSection">
-                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">
-                                Choose your sign-in method:
-                            </p>
-                            
                             <div class="button-group" style="margin-top: 0.5rem;">
-                                <button class="btn btn-primary" onclick="signInWithGoogle(false)" id="googleSignInPKCEBtn" title="Stays signed in with auto-refresh (may not work with all setups)">
-                                    <span>🔐 Sign in (PKCE)</span>
+                                <button class="btn btn-primary" onclick="signInWithGoogle()" id="googleSignInBtn">
+                                    <span>🔐 Sign in with Google</span>
                                 </button>
-                                <button class="btn btn-secondary" onclick="signInWithGoogle(true)" id="googleSignInImplicitBtn" title="Simple sign-in, re-auth every hour">
-                                    <span>🔐 Sign in (Simple)</span>
+                                <button class="btn btn-outline" onclick="showHelp('sheets')">
+                                    <span>📖 Help</span>
                                 </button>
                             </div>
                             
-                            <p style="color: var(--text-light); font-size: 0.8rem; margin-top: 0.5rem; font-style: italic;">
-                                <strong>PKCE:</strong> Auto-refresh tokens (stays signed in) • <strong>Simple:</strong> Re-sign in every ~1 hour
+                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; font-style: italic;">
+                                Token expires after ~1 hour - you'll be prompted to sign in again when needed.
                             </p>
                             
                             <div id="sheetsConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
                                 <p style="margin: 0; color: var(--success);"><strong>✓ Connected as:</strong> <span id="sheetsUserEmail"></span></p>
-                                <p style="margin: 0.5rem 0 0 0; color: var(--text-light); font-size: 0.85rem;"><span id="sheetsFlowType"></span></p>
                                 
                                 <div id="sheetsPickerSection" style="margin-top: 1rem;">
                                     <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Spreadsheet:</p>
@@ -1373,13 +1368,9 @@
         // OAuth Configuration
         const OAUTH_CONFIG = {
             clientId: '365835275822-kpaa6kkf6dc1t51ep91eaon04eave6eh.apps.googleusercontent.com',
-            // PKCE flow - no client secret needed!
             redirectUri: 'https://death259.github.io/AnimalOps/',
             scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.metadata.readonly',
-            authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
-            tokenEndpoint: 'https://oauth2.googleapis.com/token',
-            // Flow preference: 'pkce' or 'implicit'
-            preferredFlow: 'pkce' // Try PKCE first (gives refresh tokens)
+            authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth'
         };
         
         const DROPBOX_OAUTH_CONFIG = {
@@ -1423,31 +1414,6 @@
         let selectedPhotos = [];
         
         // OAuth PKCE Helper Functions
-        function generateCodeVerifier() {
-            const array = new Uint8Array(32);
-            crypto.getRandomValues(array);
-            return base64URLEncode(array);
-        }
-        
-        function base64URLEncode(buffer) {
-            const bytes = new Uint8Array(buffer);
-            let binary = '';
-            for (let i = 0; i < bytes.length; i++) {
-                binary += String.fromCharCode(bytes[i]);
-            }
-            return btoa(binary)
-                .replace(/\+/g, '-')
-                .replace(/\//g, '_')
-                .replace(/=/g, '');
-        }
-        
-        async function generateCodeChallenge(verifier) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(verifier);
-            const hash = await crypto.subtle.digest('SHA-256', data);
-            return base64URLEncode(hash);
-        }
-        
         // Check for OAuth callback on page load
         window.addEventListener('DOMContentLoaded', () => {
             handleOAuthCallback();
@@ -1472,13 +1438,6 @@
                         if (config.sheets.userEmail) {
                             document.getElementById('sheetsConnectionInfo').style.display = 'block';
                             document.getElementById('sheetsUserEmail').textContent = config.sheets.userEmail;
-                        }
-                        
-                        // Show flow type
-                        if (config.sheets.refreshToken) {
-                            document.getElementById('sheetsFlowType').textContent = 'Using PKCE flow (auto-refresh, stays signed in)';
-                        } else {
-                            document.getElementById('sheetsFlowType').textContent = 'Using Simple flow (re-auth needed ~hourly)';
                         }
                         
                         // Show spreadsheet info if one was selected
@@ -1535,55 +1494,24 @@
             localStorage.setItem('animalops_dropbox_config', JSON.stringify(config.dropbox));
         }
         
-        async function signInWithGoogle(useImplicitFlow = false) {
+        async function signInWithGoogle() {
             if (!OAUTH_CONFIG.clientId || OAUTH_CONFIG.clientId.includes('YOUR_CLIENT_ID')) {
                 alert('OAuth is not configured yet. Please see the setup instructions in the documentation.\n\nFor now, you can use "Use manual token instead" below.');
                 return;
             }
             
-            // No spreadsheet ID needed - user will pick after connecting
+            // Use implicit flow - simple and reliable
+            const params = new URLSearchParams({
+                client_id: OAUTH_CONFIG.clientId,
+                redirect_uri: OAUTH_CONFIG.redirectUri,
+                response_type: 'token',
+                scope: OAUTH_CONFIG.scopes,
+                include_granted_scopes: 'true',
+                state: 'google_sheets_oauth'
+            });
             
-            // Determine which flow to use
-            const usePKCE = !useImplicitFlow && OAUTH_CONFIG.preferredFlow === 'pkce';
-            
-            if (usePKCE) {
-                // PKCE Flow - gives refresh tokens!
-                const codeVerifier = generateCodeVerifier();
-                const codeChallenge = await generateCodeChallenge(codeVerifier);
-                
-                // Save verifier for later
-                sessionStorage.setItem('animalops_code_verifier', codeVerifier);
-                sessionStorage.setItem('animalops_oauth_flow', 'pkce');
-                
-                const params = new URLSearchParams({
-                    client_id: OAUTH_CONFIG.clientId,
-                    redirect_uri: OAUTH_CONFIG.redirectUri,
-                    response_type: 'code',
-                    scope: OAUTH_CONFIG.scopes,
-                    code_challenge: codeChallenge,
-                    code_challenge_method: 'S256',
-                    access_type: 'offline',
-                    prompt: 'consent'
-                });
-                
-                const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
-                window.location.href = authUrl;
-            } else {
-                // Implicit Flow - no refresh tokens but simpler
-                sessionStorage.setItem('animalops_oauth_flow', 'implicit');
-                
-                const params = new URLSearchParams({
-                    client_id: OAUTH_CONFIG.clientId,
-                    redirect_uri: OAUTH_CONFIG.redirectUri,
-                    response_type: 'token',
-                    scope: OAUTH_CONFIG.scopes,
-                    include_granted_scopes: 'true',
-                    state: 'google_sheets_oauth'
-                });
-                
-                const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
-                window.location.href = authUrl;
-            }
+            const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
+            window.location.href = authUrl;
         }
         
         async function handleOAuthCallback() {
@@ -1609,8 +1537,6 @@
                 }
                 
                 if (accessToken) {
-                    // No spreadsheet ID needed yet - user will pick after connecting
-                    
                     try {
                         // Get user email
                         const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -1621,11 +1547,10 @@
                         
                         const userInfo = await userInfoResponse.json();
                         
-                        // Save tokens and config (no spreadsheet ID yet)
+                        // Save tokens and config
                         config.sheets.connected = true;
                         config.sheets.token = accessToken;
-                        // Note: Implicit flow doesn't provide refresh tokens
-                        config.sheets.refreshToken = null;
+                        config.sheets.refreshToken = null; // Implicit flow doesn't provide refresh tokens
                         config.sheets.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
                         config.sheets.spreadsheetId = null; // Will be set when user picks
                         config.sheets.userEmail = userInfo.email;
@@ -1638,9 +1563,6 @@
                         document.getElementById('sheetsConfig').classList.add('connected');
                         document.getElementById('sheetsConnectionInfo').style.display = 'block';
                         document.getElementById('sheetsUserEmail').textContent = userInfo.email;
-                        document.getElementById('sheetsFlowType').textContent = 'Using Simple flow (re-auth needed ~hourly)';
-                        
-                        // Don't initialize headers yet - wait for spreadsheet selection
                         
                         checkReadyState();
                         
@@ -1650,144 +1572,30 @@
                     } catch (error) {
                         console.error('OAuth error:', error);
                         alert(`Failed to connect: ${error.message}`);
-                        sessionStorage.removeItem('animalops_spreadsheet_id');
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }
-                    return;
-                }
-            }
-            
-            // Old PKCE code flow (keeping for reference, but shouldn't be used now)
-            const urlParams = new URLSearchParams(window.location.search);
-            const code = urlParams.get('code');
-            const error = urlParams.get('error');
-            
-            // Only handle if this is a Google OAuth callback (check for Google verifier)
-            const codeVerifier = sessionStorage.getItem('animalops_code_verifier');
-            if (!codeVerifier && code) {
-                // Not a Google callback, skip
-                return;
-            }
-            
-            if (error) {
-                alert(`Authorization failed: ${error}`);
-                window.history.replaceState({}, document.title, window.location.pathname);
-                return;
-            }
-            
-            if (code && codeVerifier) {
-                // No spreadsheet ID needed yet - user will pick after connecting
-                
-                try {
-                    const tokenResponse = await fetch(OAUTH_CONFIG.tokenEndpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: new URLSearchParams({
-                            client_id: OAUTH_CONFIG.clientId,
-                            // No client_secret - using PKCE instead!
-                            code: code,
-                            code_verifier: codeVerifier,
-                            grant_type: 'authorization_code',
-                            redirect_uri: OAUTH_CONFIG.redirectUri
-                        })
-                    });
-                    
-                    if (!tokenResponse.ok) {
-                        const errorData = await tokenResponse.json();
-                        console.error('Token exchange error:', errorData);
-                        throw new Error(`PKCE flow failed: ${errorData.error || 'Unknown error'}. ${errorData.error_description || ''}\n\nTry using the "Sign in (Simple)" button instead.`);
-                    }
-                    
-                    const tokens = await tokenResponse.json();
-                    
-                    // Get user email
-                    const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-                        headers: {
-                            'Authorization': `Bearer ${tokens.access_token}`
-                        }
-                    });
-                    
-                    const userInfo = await userInfoResponse.json();
-                    
-                    // Save tokens and config (no spreadsheet ID yet)
-                    config.sheets.connected = true;
-                    config.sheets.token = tokens.access_token;
-                    config.sheets.refreshToken = tokens.refresh_token;
-                    config.sheets.expiresAt = Date.now() + (tokens.expires_in * 1000);
-                    config.sheets.spreadsheetId = null; // Will be set when user picks
-                    config.sheets.userEmail = userInfo.email;
-                    
-                    saveConfig();
-                    
-                    // Update UI
-                    document.getElementById('sheetsStatus').textContent = 'Connected';
-                    document.getElementById('sheetsStatus').className = 'status-badge connected';
-                    document.getElementById('sheetsConfig').classList.add('connected');
-                    document.getElementById('sheetsConnectionInfo').style.display = 'block';
-                    document.getElementById('sheetsUserEmail').textContent = userInfo.email;
-                    document.getElementById('sheetsFlowType').textContent = 'Using PKCE flow (auto-refresh, stays signed in)';
-                    
-                    // Don't initialize headers yet - wait for spreadsheet selection
-                    
-                    checkReadyState();
-                    
-                    // Clean up
-                    sessionStorage.removeItem('animalops_code_verifier');
-                    sessionStorage.removeItem('animalops_oauth_flow');
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                } catch (error) {
-                    console.error('OAuth error:', error);
-                    alert(`Failed to connect: ${error.message}`);
-                    sessionStorage.removeItem('animalops_code_verifier');
-                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
         }
         
         async function refreshGoogleToken() {
-            if (!config.sheets.refreshToken) {
-                console.error('No refresh token available');
-                return false;
-            }
+            // Implicit flow doesn't have refresh tokens
+            // Prompt user to sign in again
+            console.log('Token expired, user needs to sign in again');
             
-            try {
-                const tokenResponse = await fetch(OAUTH_CONFIG.tokenEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: new URLSearchParams({
-                        client_id: OAUTH_CONFIG.clientId,
-                        // No client_secret needed for PKCE!
-                        refresh_token: config.sheets.refreshToken,
-                        grant_type: 'refresh_token'
-                    })
-                });
-                
-                if (!tokenResponse.ok) {
-                    throw new Error('Failed to refresh token');
-                }
-                
-                const tokens = await tokenResponse.json();
-                
-                config.sheets.token = tokens.access_token;
-                config.sheets.expiresAt = Date.now() + (tokens.expires_in * 1000);
-                
-                // Update refresh token if a new one was provided
-                if (tokens.refresh_token) {
-                    config.sheets.refreshToken = tokens.refresh_token;
-                }
-                
-                saveConfig();
-                return true;
-                
-            } catch (error) {
-                console.error('Token refresh error:', error);
-                return false;
-            }
+            // Clear expired token
+            config.sheets.connected = false;
+            config.sheets.token = null;
+            saveConfig();
+            
+            // Update UI to show disconnected
+            document.getElementById('sheetsStatus').textContent = 'Token Expired';
+            document.getElementById('sheetsStatus').className = 'status-badge disconnected';
+            
+            // Alert user
+            alert('Your Google Sheets session has expired. Please sign in again.');
+            
+            return false;
         }
         
         function disconnectGoogleSheets() {
