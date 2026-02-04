@@ -937,13 +937,7 @@
                         <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
                         
                         <div id="dropboxOAuthSection">
-                            <label for="dropboxFolder">Folder Path (optional)</label>
-                            <input type="text" id="dropboxFolder" placeholder="/AnimalOps" value="/AnimalOps">
-                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem;">
-                                Photos will be organized in subfolders by Animal ID
-                            </p>
-                            
-                            <div class="button-group" style="margin-top: 1rem;">
+                            <div class="button-group" style="margin-top: 0rem;">
                                 <button class="btn btn-primary" onclick="signInWithDropbox()" id="dropboxSignInBtn">
                                     <span>🔐 Sign in with Dropbox</span>
                                 </button>
@@ -954,6 +948,15 @@
                             
                             <div id="dropboxConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
                                 <p style="margin: 0; color: var(--success);"><strong>✓ Connected to Dropbox</strong></p>
+                                
+                                <div id="dropboxFolderSection" style="margin-top: 1rem;">
+                                    <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Folder:</p>
+                                    <button class="btn btn-secondary" onclick="openDropboxFolderPicker()" style="font-size: 0.9rem;">
+                                        <span>📁 Browse Folders</span>
+                                    </button>
+                                    <p id="selectedDropboxFolder" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
+                                </div>
+                                
                                 <button class="btn btn-outline" onclick="disconnectDropbox()" style="margin-top: 0.5rem; font-size: 0.85rem;">
                                     <span>Disconnect</span>
                                 </button>
@@ -1340,6 +1343,28 @@
         </div>
     </div>
 
+    <!-- Dropbox Folder Picker Modal -->
+    <div class="modal" id="dropboxFolderPickerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select a Folder</h2>
+                <button class="close-modal" onclick="closeDropboxFolderPicker()">×</button>
+            </div>
+            
+            <div id="dropboxFolderPickerContent" style="padding: 1rem;">
+                <div id="dropboxBreadcrumb" style="margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">
+                    <strong>Current:</strong> <span id="currentDropboxPath">/</span>
+                </div>
+                <div id="dropboxFolderList"></div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                    <button class="btn btn-primary" onclick="selectCurrentDropboxFolder()" style="width: 100%;">
+                        <span>✓ Use This Folder</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer>
         <p>AnimalOps © 2026 - Built for animal rescue organizations with ❤️</p>
     </footer>
@@ -1478,8 +1503,12 @@
                         document.getElementById('dropboxStatus').textContent = 'Connected';
                         document.getElementById('dropboxStatus').className = 'status-badge connected';
                         document.getElementById('dropboxConfig').classList.add('connected');
-                        document.getElementById('dropboxFolder').value = config.dropbox.folder || '/AnimalOps';
                         document.getElementById('dropboxConnectionInfo').style.display = 'block';
+                        
+                        // Show selected folder
+                        if (config.dropbox.folder) {
+                            document.getElementById('selectedDropboxFolder').innerHTML = `<strong>Selected:</strong> ${config.dropbox.folder}`;
+                        }
                         
                         // Check if token needs refresh
                         if (config.dropbox.expiresAt && Date.now() >= config.dropbox.expiresAt) {
@@ -1939,9 +1968,10 @@
                 return;
             }
             
-            const folder = document.getElementById('dropboxFolder').value.trim() || '/AnimalOps';
+            // Default folder - user can change after connecting
+            const folder = '/AnimalOps';
             
-            // Save folder preference
+            // Save default folder preference
             sessionStorage.setItem('animalops_dropbox_folder', folder);
             
             // Dropbox OAuth - use simple token flow (returns token directly in hash)
@@ -1998,8 +2028,12 @@
                         document.getElementById('dropboxStatus').textContent = 'Connected';
                         document.getElementById('dropboxStatus').className = 'status-badge connected';
                         document.getElementById('dropboxConfig').classList.add('connected');
-                        document.getElementById('dropboxFolder').value = folder;
                         document.getElementById('dropboxConnectionInfo').style.display = 'block';
+                        
+                        // Show selected folder (default or from saved config)
+                        if (config.dropbox.folder) {
+                            document.getElementById('selectedDropboxFolder').innerHTML = `<strong>Selected:</strong> ${config.dropbox.folder}`;
+                        }
                         
                         checkReadyState();
                         
@@ -2080,10 +2114,129 @@
                 document.getElementById('dropboxStatus').className = 'status-badge disconnected';
                 document.getElementById('dropboxConfig').classList.remove('connected');
                 document.getElementById('dropboxConnectionInfo').style.display = 'none';
+                document.getElementById('selectedDropboxFolder').textContent = '';
                 
                 checkReadyState();
             }
         }
+        
+        // ============ DROPBOX FOLDER PICKER ============
+        
+        let currentDropboxPath = '';
+        
+        async function openDropboxFolderPicker() {
+            const modal = document.getElementById('dropboxFolderPickerModal');
+            modal.style.display = 'flex';
+            
+            // Start at root
+            currentDropboxPath = '';
+            await loadDropboxFolders(currentDropboxPath);
+        }
+        
+        async function loadDropboxFolders(path) {
+            const listContainer = document.getElementById('dropboxFolderList');
+            const breadcrumb = document.getElementById('currentDropboxPath');
+            
+            listContainer.innerHTML = '<p style="text-align: center; padding: 2rem;"><em>Loading folders...</em></p>';
+            breadcrumb.textContent = path || '/';
+            
+            try {
+                const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${config.dropbox.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        path: path,
+                        limit: 100,
+                        include_mounted_folders: false
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to fetch folders');
+                }
+                
+                const data = await response.json();
+                
+                // Filter to only show folders
+                const folders = data.entries.filter(entry => entry['.tag'] === 'folder');
+                
+                if (folders.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No subfolders in this location.</p>';
+                } else {
+                    // Display folders as a list
+                    listContainer.innerHTML = `
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            ${path !== '' ? `
+                                <div class="folder-item" onclick="navigateUpDropbox()" 
+                                     style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s; background: rgba(100, 100, 100, 0.05);">
+                                    <div style="font-weight: 500;">📁 .. (Go Up)</div>
+                                </div>
+                            ` : ''}
+                            ${folders.map(folder => `
+                                <div class="folder-item" onclick="navigateToDropboxFolder('${folder.path_lower.replace(/'/g, "\\'")}', '${folder.name.replace(/'/g, "\\'")}');" 
+                                     style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s;">
+                                    <div style="font-weight: 500;">📁 ${folder.name}</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-light);">Click to open</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    
+                    // Add hover effects via CSS if not already added
+                    if (!document.getElementById('folder-picker-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'folder-picker-styles';
+                        style.textContent = `
+                            .folder-item:hover {
+                                background: rgba(77, 184, 196, 0.1);
+                                border-color: var(--primary);
+                                transform: translateY(-2px);
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error fetching Dropbox folders:', error);
+                listContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error);">Failed to load folders. Please try again.</p>';
+            }
+        }
+        
+        function navigateToDropboxFolder(folderPath, folderName) {
+            currentDropboxPath = folderPath;
+            loadDropboxFolders(currentDropboxPath);
+        }
+        
+        function navigateUpDropbox() {
+            // Go up one level
+            const parts = currentDropboxPath.split('/').filter(p => p);
+            parts.pop();
+            currentDropboxPath = parts.length > 0 ? '/' + parts.join('/') : '';
+            loadDropboxFolders(currentDropboxPath);
+        }
+        
+        function selectCurrentDropboxFolder() {
+            const folderPath = currentDropboxPath || '/';
+            
+            // Save the selected folder
+            config.dropbox.folder = folderPath;
+            saveConfig();
+            
+            // Update UI
+            document.getElementById('selectedDropboxFolder').innerHTML = `<strong>Selected:</strong> ${folderPath}`;
+            
+            closeDropboxFolderPicker();
+        }
+        
+        function closeDropboxFolderPicker() {
+            document.getElementById('dropboxFolderPickerModal').style.display = 'none';
+        }
+        
+        // ============ END DROPBOX FOLDER PICKER ============
         
         function toggleDropboxManualMode() {
             const oauthSection = document.getElementById('dropboxOAuthSection');
