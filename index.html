@@ -1474,6 +1474,13 @@
                             document.getElementById('sheetsUserEmail').textContent = config.sheets.userEmail;
                         }
                         
+                        // Show flow type
+                        if (config.sheets.refreshToken) {
+                            document.getElementById('sheetsFlowType').textContent = 'Using PKCE flow (auto-refresh, stays signed in)';
+                        } else {
+                            document.getElementById('sheetsFlowType').textContent = 'Using Simple flow (re-auth needed ~hourly)';
+                        }
+                        
                         // Show spreadsheet info if one was selected
                         if (config.sheets.spreadsheetId && config.sheets.spreadsheetName) {
                             document.getElementById('selectedSpreadsheet').innerHTML = `<strong>Selected:</strong> ${config.sheets.spreadsheetName}`;
@@ -1589,13 +1596,19 @@
                 const state = params.get('state');
                 const error = params.get('error');
                 
+                // ONLY handle Google OAuth callbacks (must have state='google_sheets_oauth')
+                if (!state || state !== 'google_sheets_oauth') {
+                    // Not a Google callback, skip completely
+                    return;
+                }
+                
                 if (error) {
                     alert(`Authorization failed: ${error}`);
                     window.history.replaceState({}, document.title, window.location.pathname);
                     return;
                 }
                 
-                if (accessToken && state === 'google_sheets_oauth') {
+                if (accessToken) {
                     // No spreadsheet ID needed yet - user will pick after connecting
                     
                     try {
@@ -2640,7 +2653,13 @@
         }
 
         function checkReadyState() {
-            if (config.sheets.connected && (config.dropbox.connected || config.onedrive.connected || config.drive.connected)) {
+            // Check if both Google Sheets and photo storage are connected
+            const sheetsReady = config.sheets.connected && config.sheets.spreadsheetId;
+            const storageReady = (config.dropbox.connected && config.dropbox.folder) || 
+                                 (config.onedrive.connected && config.onedrive.folder) || 
+                                 (config.drive.connected && config.drive.folderId);
+            
+            if (sheetsReady && storageReady) {
                 document.getElementById('setupSection').classList.remove('active');
                 document.getElementById('formSection').classList.add('active');
             }
