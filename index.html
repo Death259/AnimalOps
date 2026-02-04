@@ -1124,6 +1124,16 @@
                         <label for="bodyConditionScore">Body Condition Score</label>
                         <input type="text" id="bodyConditionScore" placeholder="e.g., 5, Ideal, 3/9">
                     </div>
+                    
+                    <div>
+                        <label for="foodWaterAvailability">Food and Water Availability</label>
+                        <input type="text" id="foodWaterAvailability" placeholder="e.g., Fresh water available, Fed twice daily">
+                    </div>
+                    
+                    <div>
+                        <label for="housingDescription">Housing Description</label>
+                        <input type="text" id="housingDescription" placeholder="e.g., Indoor kennel, Outdoor run with shelter">
+                    </div>
                 </div>
 
                 <label for="healthNotes">Health Notes</label>
@@ -1589,8 +1599,6 @@
                         sessionStorage.removeItem('animalops_spreadsheet_id');
                         window.history.replaceState({}, document.title, window.location.pathname);
                         
-                        alert('Successfully connected to Google Sheets!\n\nNote: You\'ll need to re-sign in after about 1 hour when the token expires.');
-                        
                     } catch (error) {
                         console.error('OAuth error:', error);
                         alert(`Failed to connect: ${error.message}`);
@@ -1691,8 +1699,6 @@
                     sessionStorage.removeItem('animalops_spreadsheet_id');
                     sessionStorage.removeItem('animalops_oauth_flow');
                     window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    alert('Successfully connected to Google Sheets!\n\nUsing PKCE flow with auto-refreshing tokens.');
                     
                 } catch (error) {
                     console.error('OAuth error:', error);
@@ -1912,8 +1918,6 @@
                         // Clean up
                         sessionStorage.removeItem('animalops_dropbox_folder');
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        
-                        alert('Successfully connected to Dropbox!');
                         
                     } catch (error) {
                         console.error('Dropbox OAuth error:', error);
@@ -2158,9 +2162,9 @@
 
         async function initializeSheetHeaders() {
             try {
-                // Check if headers exist (A1:P1 covers all 16 columns)
+                // Check if headers exist (A1:R1 covers all 18 columns)
                 const response = await fetch(
-                    `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A1:P1`,
+                    `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A1:R1`,
                     {
                         headers: {
                             'Authorization': `Bearer ${config.sheets.token}`
@@ -2173,7 +2177,7 @@
                 // If no headers, create them
                 if (!data.values || data.values.length === 0) {
                     await fetch(
-                        `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A1:P1?valueInputOption=RAW`,
+                        `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A1:R1?valueInputOption=RAW`,
                         {
                             method: 'PUT',
                             headers: {
@@ -2185,6 +2189,7 @@
                                     'Timestamp', 'Internal ID', 'Name', 'Species', 'Breed', 
                                     'Age', 'Gender', 'Intake Date', 'Animal ID', 
                                     'Building ID', 'Color', 'Body Condition Score',
+                                    'Food and Water Availability', 'Housing Description',
                                     'Health Notes', 'Behavior Notes', 'Photo Links', 'Photo Count'
                                 ]]
                             })
@@ -2376,14 +2381,6 @@
             }
         }
 
-        function disconnectDropbox() {
-            config.dropbox.connected = false;
-            config.dropbox.token = null;
-            document.getElementById('dropboxStatus').textContent = 'Not Connected';
-            document.getElementById('dropboxStatus').className = 'status-badge disconnected';
-            document.getElementById('dropboxConfig').classList.remove('connected');
-        }
-
         function disconnectOneDrive() {
             config.onedrive.connected = false;
             config.onedrive.token = null;
@@ -2481,10 +2478,12 @@
                         buildingId: row[9] || '',
                         color: row[10] || '',
                         bodyConditionScore: row[11] || '',
-                        healthNotes: row[12] || '',
-                        behaviorNotes: row[13] || '',
-                        photoLinks: row[14] || '',
-                        photoCount: row[15] || '0'
+                        foodWaterAvailability: row[12] || '',
+                        housingDescription: row[13] || '',
+                        healthNotes: row[14] || '',
+                        behaviorNotes: row[15] || '',
+                        photoLinks: row[16] || '',
+                        photoCount: row[17] || '0'
                     }));
                     
                     updateStats();
@@ -2831,6 +2830,16 @@
                             </div>
                             
                             <div class="print-info-item">
+                                <div class="print-info-label">Food and Water Availability</div>
+                                <div class="print-info-value">${record.foodWaterAvailability || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">Housing Description</div>
+                                <div class="print-info-value">${record.housingDescription || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
                                 <div class="print-info-label">Number of Photos</div>
                                 <div class="print-info-value">${record.photoCount || '0'}</div>
                             </div>
@@ -2949,6 +2958,8 @@
             document.getElementById('buildingId').value = record.buildingId;
             document.getElementById('color').value = record.color;
             document.getElementById('bodyConditionScore').value = record.bodyConditionScore;
+            document.getElementById('foodWaterAvailability').value = record.foodWaterAvailability || '';
+            document.getElementById('housingDescription').value = record.housingDescription || '';
             document.getElementById('healthNotes').value = record.healthNotes;
             document.getElementById('behaviorNotes').value = record.behaviorNotes;
             
@@ -3138,6 +3149,8 @@
                         document.getElementById('buildingId').value,
                         document.getElementById('color').value,
                         document.getElementById('bodyConditionScore').value,
+                        document.getElementById('foodWaterAvailability').value,
+                        document.getElementById('housingDescription').value,
                         document.getElementById('healthNotes').value,
                         document.getElementById('behaviorNotes').value,
                         allPhotoLinks.join(', '),
@@ -3168,6 +3181,8 @@
                         document.getElementById('buildingId').value,
                         document.getElementById('color').value,
                         document.getElementById('bodyConditionScore').value,
+                        document.getElementById('foodWaterAvailability').value,
+                        document.getElementById('housingDescription').value,
                         document.getElementById('healthNotes').value,
                         document.getElementById('behaviorNotes').value,
                         photoLinks.join(', '),
