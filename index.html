@@ -840,82 +840,8 @@
             <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin-bottom: 0.5rem;">Configuration</h2>
             <p style="color: var(--text-light); margin-bottom: 2rem;">Connect one service from each section below to get started.</p>
             
-            <!-- Data Storage Section -->
-            <div style="margin-bottom: 2.5rem;">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                    📊 Data Storage
-                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One - Required)</span>
-                </h3>
-                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal records and information</p>
-                
-                <div class="config-grid">
-                    <!-- Google Sheets Configuration -->
-                    <div class="config-item" id="sheetsConfig">
-                        <h3>
-                            📊 Google Sheets
-                            <span class="status-badge disconnected" id="sheetsStatus">Not Connected</span>
-                        </h3>
-                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data and records</p>
-                        
-                        <div id="sheetsOAuthSection">
-                            <div class="button-group" style="margin-top: 0.5rem;">
-                                <button class="btn btn-primary" onclick="signInWithGoogle()" id="googleSignInBtn">
-                                    <span>🔐 Sign in with Google</span>
-                                </button>
-                                <button class="btn btn-outline" onclick="showHelp('sheets')">
-                                    <span>📖 Help</span>
-                                </button>
-                            </div>
-                            
-                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; font-style: italic;">
-                                Token expires after ~1 hour - you'll be prompted to sign in again when needed.
-                            </p>
-                            
-                            <div id="sheetsConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
-                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected as:</strong> <span id="sheetsUserEmail"></span></p>
-                                
-                                <div id="sheetsPickerSection" style="margin-top: 1rem;">
-                                    <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Spreadsheet:</p>
-                                    <button class="btn btn-secondary" onclick="openSpreadsheetPicker()" style="font-size: 0.9rem;">
-                                        <span>📊 Browse My Spreadsheets</span>
-                                    </button>
-                                    <p id="selectedSpreadsheet" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
-                                </div>
-                                
-                                <button class="btn btn-outline" onclick="disconnectGoogleSheets()" style="margin-top: 0.5rem; font-size: 0.85rem;">
-                                    <span>Disconnect</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Fallback to manual token (hidden by default) -->
-                        <div id="sheetsManualSection" style="display: none;">
-                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
-                                <strong>Advanced:</strong> Manual token entry
-                            </p>
-                            
-                            <label for="sheetsToken">API Access Token</label>
-                            <input type="password" id="sheetsToken" placeholder="ya29.a0...">
-                            
-                            <div class="button-group">
-                                <button class="btn btn-primary" onclick="connectGoogleSheetsManual()">
-                                    <span>Connect</span>
-                                </button>
-                                <button class="btn btn-outline" onclick="showOAuthSection()">
-                                    <span>← Back to Sign In</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <button class="btn btn-text" onclick="toggleManualMode()" style="margin-top: 1rem; font-size: 0.85rem;">
-                            <span id="toggleModeText">Use manual token instead</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
             <!-- Photo Storage Section -->
-            <div>
+            <div style="margin-bottom: 2.5rem;">
                 <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     📸 Photo Storage
                     <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One - Required)</span>
@@ -1031,6 +957,80 @@
                                 <span>📖 How to Get Token</span>
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Storage Section -->
+            <div style="margin-bottom: 2.5rem;">
+                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    📊 Data Storage
+                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One - Required)</span>
+                </h3>
+                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal records and information</p>
+                
+                <div class="config-grid">
+                    <!-- Google Sheets Configuration -->
+                    <div class="config-item" id="sheetsConfig">
+                        <h3>
+                            📊 Google Sheets
+                            <span class="status-badge disconnected" id="sheetsStatus">Not Connected</span>
+                        </h3>
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data and records</p>
+                        
+                        <div id="sheetsOAuthSection">
+                            <div class="button-group" style="margin-top: 0.5rem;">
+                                <button class="btn btn-primary" onclick="signInWithGoogle()" id="googleSignInBtn">
+                                    <span>🔐 Sign in with Google</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showHelp('sheets')">
+                                    <span>📖 Help</span>
+                                </button>
+                            </div>
+                            
+                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; font-style: italic;">
+                                Token expires after ~1 hour - you'll be prompted to sign in again when needed.
+                            </p>
+                            
+                            <div id="sheetsConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected as:</strong> <span id="sheetsUserEmail"></span></p>
+                                
+                                <div id="sheetsPickerSection" style="margin-top: 1rem;">
+                                    <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Spreadsheet:</p>
+                                    <button class="btn btn-secondary" onclick="openSpreadsheetPicker()" style="font-size: 0.9rem;">
+                                        <span>📊 Browse My Spreadsheets</span>
+                                    </button>
+                                    <p id="selectedSpreadsheet" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
+                                </div>
+                                
+                                <button class="btn btn-outline" onclick="disconnectGoogleSheets()" style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <span>Disconnect</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Fallback to manual token (hidden by default) -->
+                        <div id="sheetsManualSection" style="display: none;">
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+                                <strong>Advanced:</strong> Manual token entry
+                            </p>
+                            
+                            <label for="sheetsToken">API Access Token</label>
+                            <input type="password" id="sheetsToken" placeholder="ya29.a0...">
+                            
+                            <div class="button-group">
+                                <button class="btn btn-primary" onclick="connectGoogleSheetsManual()">
+                                    <span>Connect</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showOAuthSection()">
+                                    <span>← Back to Sign In</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-text" onclick="toggleManualMode()" style="margin-top: 1rem; font-size: 0.85rem;">
+                            <span id="toggleModeText">Use manual token instead</span>
+                        </button>
                     </div>
                 </div>
             </div>
