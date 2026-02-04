@@ -1405,7 +1405,7 @@
                 token: null,
                 refreshToken: null,
                 expiresAt: null,
-                folder: '/AnimalOps'
+                folder: null
             },
             onedrive: {
                 connected: false,
@@ -1981,11 +1981,7 @@
                 return;
             }
             
-            // Default folder - user can change after connecting
-            const folder = '/AnimalOps';
-            
-            // Save default folder preference
-            sessionStorage.setItem('animalops_dropbox_folder', folder);
+            // No default folder - user must select one after connecting
             
             // Dropbox OAuth - use simple token flow (returns token directly in hash)
             const params = new URLSearchParams({
@@ -2023,13 +2019,11 @@
                 }
                 
                 if (accessToken) {
-                    const folder = sessionStorage.getItem('animalops_dropbox_folder') || '/AnimalOps';
-                    
                     try {
-                        // Save tokens and config
+                        // Save tokens and config (no folder yet - user must select)
                         config.dropbox.connected = true;
                         config.dropbox.token = accessToken;
-                        config.dropbox.folder = folder;
+                        config.dropbox.folder = null; // User must select a folder
                         
                         if (expiresIn) {
                             config.dropbox.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
@@ -2043,15 +2037,11 @@
                         document.getElementById('dropboxConfig').classList.add('connected');
                         document.getElementById('dropboxConnectionInfo').style.display = 'block';
                         
-                        // Show selected folder (default or from saved config)
-                        if (config.dropbox.folder) {
-                            document.getElementById('selectedDropboxFolder').innerHTML = `<strong>Selected:</strong> ${config.dropbox.folder}`;
-                        }
+                        // Don't show folder yet - user must select one
                         
                         checkReadyState();
                         
                         // Clean up
-                        sessionStorage.removeItem('animalops_dropbox_folder');
                         window.history.replaceState({}, document.title, window.location.pathname);
                         
                     } catch (error) {
@@ -2118,7 +2108,7 @@
                     token: null,
                     refreshToken: null,
                     expiresAt: null,
-                    folder: '/AnimalOps'
+                    folder: null
                 };
                 
                 localStorage.removeItem('animalops_dropbox_config');
@@ -2243,6 +2233,9 @@
             document.getElementById('selectedDropboxFolder').innerHTML = `<strong>Selected:</strong> ${folderPath}`;
             
             closeDropboxFolderPicker();
+            
+            // Check if we're ready to navigate to Add Animal page
+            checkReadyState();
         }
         
         function closeDropboxFolderPicker() {
@@ -2458,7 +2451,7 @@
         // Dropbox Connection
         async function connectDropbox() {
             const token = document.getElementById('dropboxToken').value.trim();
-            const folder = document.getElementById('dropboxFolder').value.trim() || '/AnimalOps';
+            const folder = document.getElementById('dropboxFolderManual').value.trim() || '/AnimalOps';
             
             if (!token) {
                 alert('Please enter Dropbox Access Token');
