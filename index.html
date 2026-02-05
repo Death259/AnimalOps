@@ -2038,8 +2038,7 @@
                     },
                     body: JSON.stringify({
                         path: path || '',  // Ensure empty string for root
-                        limit: 100,
-                        include_mounted_folders: false
+                        limit: 100
                     })
                 });
 
@@ -2071,7 +2070,7 @@
                                 </div>
                             ` : ''}
                             ${folders.map(folder => `
-                                <div class="folder-item" onclick="navigateToDropboxFolder('${folder.path_lower.replace(/'/g, "\\'")}', '${folder.name.replace(/'/g, "\\'")}');" 
+                                <div class="folder-item" onclick="navigateToDropboxFolder('${folder.path_display.replace(/'/g, "\\'")}', '${folder.name.replace(/'/g, "\\'")}');" 
                                      style="padding: 1rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s;">
                                     <div style="font-weight: 500;">📁 ${folder.name}</div>
                                     <div style="font-size: 0.85rem; color: var(--text-light);">Click to open</div>
