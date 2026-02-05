@@ -3910,109 +3910,74 @@
             if (section === 'sheets') {
                 content.innerHTML = `
                     <div class="help-section">
-                        <h3>🔑 Getting a Google Sheets API Token</h3>
-                        <p>Follow these steps to get your Google Sheets access token:</p>
+                        <h3>📊 Google Sheets - OAuth Sign In</h3>
+                        <p>AnimalOps uses OAuth to connect to your Google Sheets securely.</p>
                         
+                        <h4>How It Works:</h4>
                         <ol>
-                            <li><strong>Create a Google Cloud Project</strong>
-                                <ul>
-                                    <li>Go to <a href="https://console.cloud.google.com" target="_blank">Google Cloud Console</a></li>
-                                    <li>Click "Create Project" and give it a name (e.g., "AnimalOps")</li>
-                                </ul>
-                            </li>
-                            <li><strong>Enable Google Sheets API</strong>
-                                <ul>
-                                    <li>In your project, go to "APIs & Services" → "Library"</li>
-                                    <li>Search for "Google Sheets API" and click "Enable"</li>
-                                </ul>
-                            </li>
-                            <li><strong>Create OAuth 2.0 Credentials</strong>
-                                <ul>
-                                    <li>Go to "APIs & Services" → "Credentials"</li>
-                                    <li>Click "Create Credentials" → "OAuth client ID"</li>
-                                    <li>Choose "Web application"</li>
-                                    <li>Add authorized redirect URI: <code>https://developers.google.com/oauthplayground</code></li>
-                                </ul>
-                            </li>
-                            <li><strong>Get Access Token via OAuth Playground</strong>
-                                <ul>
-                                    <li>Go to <a href="https://developers.google.com/oauthplayground" target="_blank">OAuth 2.0 Playground</a></li>
-                                    <li>Click the settings gear icon (top right)</li>
-                                    <li>Check "Use your own OAuth credentials"</li>
-                                    <li>Enter your Client ID and Client Secret</li>
-                                    <li>In Step 1, select "Google Sheets API v4" → <code>https://www.googleapis.com/auth/spreadsheets</code></li>
-                                    <li>Click "Authorize APIs" and sign in</li>
-                                    <li>In Step 2, click "Exchange authorization code for tokens"</li>
-                                    <li>Copy the <strong>Access token</strong> (starts with "ya29...")</li>
-                                </ul>
-                            </li>
-                            <li><strong>Create a Spreadsheet</strong>
-                                <ul>
-                                    <li>Create a new Google Sheet</li>
-                                    <li>The Spreadsheet ID is in the URL: <code>docs.google.com/spreadsheets/d/<strong>SPREADSHEET_ID</strong>/edit</code></li>
-                                </ul>
-                            </li>
+                            <li>Click "🔐 Sign in with Google" button</li>
+                            <li>You'll be redirected to Google to approve access</li>
+                            <li>After approving, you'll be redirected back to AnimalOps</li>
+                            <li>Click "📊 Browse My Spreadsheets" to select which spreadsheet to use</li>
+                            <li>Done! Your animal records will be stored in the selected spreadsheet</li>
                         </ol>
                         
+                        <h4>What Gets Stored:</h4>
+                        <p>Each animal record includes:</p>
+                        <ul>
+                            <li>Timestamp, Internal ID, Name, Species, Breed</li>
+                            <li>Age, Gender, Intake Date, Your Animal ID</li>
+                            <li>Building ID, Color, Body Condition Score</li>
+                            <li>Food & Water Availability, Housing Description</li>
+                            <li>Health Notes, Behavior Notes</li>
+                            <li>Photo Links, Photo Count</li>
+                        </ul>
+                        
+                        <div class="alert alert-info">
+                            <span>ℹ️</span>
+                            <div><strong>Token Expiration:</strong> Your access token expires after ~1 hour. When it expires, you'll see a notification and can simply sign in again with one click.</div>
+                        </div>
+                        
                         <div class="alert alert-warning">
-                            <span>⚠️</span>
-                            <div><strong>Note:</strong> Access tokens expire after about 1 hour. You'll need to generate a new one when it expires. For longer-term use, consider implementing refresh tokens.</div>
+                            <span>🔒</span>
+                            <div><strong>Privacy:</strong> AnimalOps only requests access to Google Sheets and Drive metadata (to list your spreadsheets). Your data stays in your Google account.</div>
                         </div>
                     </div>
                 `;
             } else if (section === 'dropbox') {
                 content.innerHTML = `
                     <div class="help-section">
-                        <h3>🔑 Getting a Dropbox API Token</h3>
-                        <p>Follow these steps to get your Dropbox access token:</p>
+                        <h3>📦 Dropbox - OAuth Sign In</h3>
+                        <p>AnimalOps uses OAuth to connect to your Dropbox securely.</p>
                         
+                        <h4>How It Works:</h4>
                         <ol>
-                            <li><strong>Create a Dropbox App</strong>
-                                <ul>
-                                    <li>Go to <a href="https://www.dropbox.com/developers/apps" target="_blank">Dropbox App Console</a></li>
-                                    <li>Click "Create app"</li>
-                                </ul>
-                            </li>
-                            <li><strong>Configure Your App</strong>
-                                <ul>
-                                    <li>Choose API: <strong>Scoped access</strong></li>
-                                    <li>Choose access type: <strong>Full Dropbox</strong> (or App folder if you prefer)</li>
-                                    <li>Name your app (e.g., "AnimalOps")</li>
-                                    <li>Click "Create app"</li>
-                                </ul>
-                            </li>
-                            <li><strong>Set Permissions</strong>
-                                <ul>
-                                    <li>Go to the "Permissions" tab</li>
-                                    <li>Enable these scopes:
-                                        <ul>
-                                            <li><code>files.metadata.write</code></li>
-                                            <li><code>files.content.write</code></li>
-                                            <li><code>files.content.read</code></li>
-                                            <li><code>sharing.write</code></li>
-                                        </ul>
-                                    </li>
-                                    <li>Click "Submit" to save permissions</li>
-                                </ul>
-                            </li>
-                            <li><strong>Generate Access Token</strong>
-                                <ul>
-                                    <li>Go to the "Settings" tab</li>
-                                    <li>Scroll to "OAuth 2" section</li>
-                                    <li>Under "Generated access token", click "Generate"</li>
-                                    <li>Copy the token (starts with "sl...")</li>
-                                </ul>
-                            </li>
+                            <li>Click "🔐 Sign in with Dropbox" button</li>
+                            <li>You'll be redirected to Dropbox to approve access</li>
+                            <li>After approving, you'll be redirected back to AnimalOps</li>
+                            <li>Click "📁 Browse Folders" to select which folder to use for photos</li>
+                            <li>Photos will be organized in: <code>YourFolder/AnimalOps/AnimalID/</code></li>
                         </ol>
                         
+                        <h4>Folder Structure:</h4>
+                        <p>Photos are automatically organized:</p>
+                        <ul>
+                            <li><strong>Your Chosen Folder</strong> (e.g., /Documents)</li>
+                            <li>└── <strong>AnimalOps</strong> (auto-created subfolder)</li>
+                            <li>&nbsp;&nbsp;&nbsp;&nbsp;└── <strong>A001</strong> (animal ID folder)</li>
+                            <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── A001_photo_1.jpg</li>
+                            <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── A001_photo_2.jpg</li>
+                            <li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── A001_photo_3.jpg</li>
+                        </ul>
+                        
                         <div class="alert alert-info">
-                            <span>ℹ️</span>
-                            <div><strong>Tip:</strong> The generated token doesn't expire, but keep it secure! Anyone with this token can access your Dropbox.</div>
+                            <span>✨</span>
+                            <div><strong>Multi-User Support:</strong> Full photo paths are stored in Google Sheets, so all team members can access the same photos regardless of which folder they choose!</div>
                         </div>
                         
                         <div class="alert alert-warning">
-                            <span>⚠️</span>
-                            <div><strong>Security:</strong> For production use, implement OAuth 2.0 flow instead of using long-lived tokens.</div>
+                            <span>🔒</span>
+                            <div><strong>Privacy:</strong> Your Dropbox token is stored only in your browser. AnimalOps never sees your token or files.</div>
                         </div>
                     </div>
                 `;
@@ -4145,40 +4110,58 @@
                     <div class="help-section">
                         <h3>🚀 Getting Started</h3>
                         <ol>
-                            <li>Set up your Google Sheets spreadsheet and get an API token</li>
-                            <li>Choose Dropbox, OneDrive, or Google Drive for photo storage</li>
-                            <li>Create an app and get an access token for your chosen storage provider</li>
-                            <li>Connect both services in the Configuration section</li>
-                            <li>Start adding animal records!</li>
+                            <li><strong>Connect Photo Storage:</strong> Sign in with Dropbox, OneDrive, or Google Drive</li>
+                            <li><strong>Select Folder:</strong> Choose or browse to the folder where photos will be stored</li>
+                            <li><strong>Connect Google Sheets:</strong> Sign in with Google to store animal records</li>
+                            <li><strong>Select Spreadsheet:</strong> Browse and choose which spreadsheet to use</li>
+                            <li>Start adding animal records with photos!</li>
                         </ol>
                     </div>
                     
                     <div class="help-section">
                         <h3>💡 Features</h3>
                         <ul>
-                            <li><strong>Data Storage:</strong> All animal information is stored in Google Sheets, making it easy to view, sort, and analyze</li>
-                            <li><strong>Photo Storage:</strong> Photos are uploaded to your choice of Dropbox, OneDrive, or Google Drive with organized folder structure</li>
-                            <li><strong>Unique IDs:</strong> Each animal gets a unique identifier for tracking</li>
-                            <li><strong>Direct Links:</strong> Photo links are saved in the spreadsheet for easy access</li>
-                            <li><strong>Privacy:</strong> Your API tokens are stored only in your browser session</li>
-                            <li><strong>Flexible:</strong> Use the cloud storage provider you already have</li>
+                            <li><strong>OAuth Sign-In:</strong> Secure one-click authentication with Google and Dropbox</li>
+                            <li><strong>Spreadsheet Picker:</strong> Browse and select spreadsheets visually - no more copying IDs!</li>
+                            <li><strong>Folder Browser:</strong> Navigate and select Dropbox folders with drill-down support</li>
+                            <li><strong>Auto-Organization:</strong> Photos automatically organized in <code>YourFolder/AnimalOps/AnimalID/</code></li>
+                            <li><strong>Multi-User Support:</strong> Full photo paths stored so all team members can access photos</li>
+                            <li><strong>Data Storage:</strong> All animal information stored in Google Sheets for easy viewing and analysis</li>
+                            <li><strong>Camera Support:</strong> Take photos directly from your device's camera</li>
+                            <li><strong>Print Packets:</strong> Generate printable animal records with photos</li>
+                            <li><strong>Photo Sync:</strong> View and manage existing photos when editing records</li>
+                            <li><strong>Dashboard:</strong> See total animals, species breakdown, and recent activity</li>
+                            <li><strong>Privacy First:</strong> Tokens stored only in your browser, never on any server</li>
                         </ul>
                     </div>
                     
                     <div class="help-section">
-                        <h3>🔮 Future Enhancements</h3>
-                        <p>This application is designed to be extensible. Future versions may support:</p>
+                        <h3>🗂️ Data Fields</h3>
+                        <p>Each animal record captures:</p>
                         <ul>
-                            <li>Additional cloud storage providers</li>
-                            <li>Search and filtering capabilities</li>
-                            <li>Export and reporting features</li>
-                            <li>Medical record tracking</li>
+                            <li><strong>Basic Info:</strong> Name, Species, Breed, Age, Gender</li>
+                            <li><strong>Identification:</strong> Internal ID (auto-generated), Your Animal ID</li>
+                            <li><strong>Location:</strong> Building ID, Housing Description</li>
+                            <li><strong>Health:</strong> Body Condition Score, Food & Water Availability, Health Notes</li>
+                            <li><strong>Behavior:</strong> Behavior Notes, Temperament observations</li>
+                            <li><strong>Visual:</strong> Photos with full cloud storage paths</li>
                         </ul>
+                    </div>
+                    
+                    <div class="help-section">
+                        <h3>📸 Photo Storage</h3>
+                        <p>Choose your preferred cloud storage:</p>
+                        <ul>
+                            <li><strong>Dropbox:</strong> OAuth sign-in with folder browser</li>
+                            <li><strong>OneDrive:</strong> Manual token setup (see help for instructions)</li>
+                            <li><strong>Google Drive:</strong> Manual token setup (see help for instructions)</li>
+                        </ul>
+                        <p>All providers auto-create an <code>AnimalOps</code> subfolder to keep your files organized.</p>
                     </div>
                     
                     <div class="help-section">
                         <h3>❓ Need Help?</h3>
-                        <p>Click the help buttons next to each service in the Configuration section for step-by-step instructions on obtaining API tokens.</p>
+                        <p>Click the 📖 Help buttons next to each service for detailed setup instructions.</p>
                     </div>
                 `;
             }
