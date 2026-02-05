@@ -2832,9 +2832,29 @@
                 return;
             }
             
+            // Count total photos
+            let totalPhotos = 0;
+            recordsToPrint.forEach(record => {
+                totalPhotos += parseInt(record.photoCount) || 0;
+            });
+            
+            // Warn if large batch
+            if (totalPhotos > 50) {
+                const proceed = confirm(
+                    `Warning: You're about to print ${recordsToPrint.length} animal(s) with ${totalPhotos} total photos.\n\n` +
+                    `This may take several minutes to load and could use significant memory.\n\n` +
+                    `Recommendations:\n` +
+                    `• For 50-100 photos: Usually okay\n` +
+                    `• For 100-200 photos: May be slow, consider batching\n` +
+                    `• For 200+ photos: Strongly recommend printing in smaller batches\n\n` +
+                    `Do you want to continue?`
+                );
+                if (!proceed) return;
+            }
+            
             const printContainer = document.getElementById('printContainer');
             printContainer.style.display = 'block';
-            printContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">Preparing print pages and fetching photos...</p>';
+            printContainer.innerHTML = `<p style="text-align: center; padding: 2rem;">Preparing ${recordsToPrint.length} record(s) with ${totalPhotos} photo(s)...<br><small>Please wait, this may take a while.</small></p>`;
             
             let pagesHTML = '';
             
@@ -2968,7 +2988,7 @@
                         
                         pagesHTML += `
                             <div class="print-page print-photo-page">
-                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}">
+                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}" data-photo-index="${i}">
                                 <div class="print-photo-caption">
                                     ${record.animalId} - Photo ${i + 1} of ${photoUrls.length}
                                 </div>
@@ -2989,14 +3009,98 @@
             
             printContainer.innerHTML = pagesHTML;
             
-            // Wait for images to load then print
-            setTimeout(() => {
+            // Wait for ALL images to fully load before printing
+            const images = printContainer.querySelectorAll('img');
+            const totalImages = images.length;
+            
+            if (totalImages === 0) {
+                // No images to load, print immediately
                 window.print();
                 setTimeout(() => {
                     printContainer.style.display = 'none';
                     printContainer.innerHTML = '';
                 }, 1000);
-            }, 2000);
+                return;
+            }
+            
+            // Show progress indicator
+            const progressDiv = document.createElement('div');
+            progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; text-align: center;';
+            progressDiv.innerHTML = `
+                <h3 style="margin: 0 0 1rem 0;">Preparing Print Document</h3>
+                <p style="margin: 0 0 0.5rem 0;">Loading images: <span id="printProgress">0</span> / ${totalImages}</p>
+                <div style="width: 300px; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
+                    <div id="printProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+                </div>
+                <p style="margin: 1rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">Please wait... This may take a while for many photos.</p>
+            `;
+            document.body.appendChild(progressDiv);
+            
+            let loadedCount = 0;
+            const updateProgress = () => {
+                loadedCount++;
+                const progressText = document.getElementById('printProgress');
+                const progressBar = document.getElementById('printProgressBar');
+                if (progressText) progressText.textContent = loadedCount;
+                if (progressBar) progressBar.style.width = `${(loadedCount / totalImages) * 100}%`;
+                
+                if (loadedCount === totalImages) {
+                    // All images loaded - wait a bit more then print
+                    setTimeout(() => {
+                        progressDiv.remove();
+                        window.print();
+                        setTimeout(() => {
+                            printContainer.style.display = 'none';
+                            printContainer.innerHTML = '';
+                        }, 1000);
+                    }, 500);
+                }
+            };
+            
+            // Set up load handlers for each image
+            const loadPromises = [];
+            images.forEach(img => {
+                const promise = new Promise((resolve, reject) => {
+                    if (img.complete && img.naturalHeight !== 0) {
+                        // Already loaded
+                        updateProgress();
+                        resolve();
+                    } else {
+                        img.onload = () => {
+                            updateProgress();
+                            resolve();
+                        };
+                        img.onerror = () => {
+                            console.error('Failed to load image:', img.src);
+                            updateProgress(); // Count failed images too
+                            resolve(); // Don't reject, just continue
+                        };
+                        
+                        // Timeout after 30 seconds per image
+                        setTimeout(() => {
+                            if (!img.complete) {
+                                console.error('Image load timeout:', img.src);
+                                updateProgress();
+                                resolve();
+                            }
+                        }, 30000);
+                    }
+                });
+                loadPromises.push(promise);
+            });
+            
+            // Fallback: If something goes wrong, show print after 2 minutes
+            setTimeout(() => {
+                if (document.body.contains(progressDiv)) {
+                    progressDiv.remove();
+                    alert('Some images took too long to load. Printing with available images.');
+                    window.print();
+                    setTimeout(() => {
+                        printContainer.style.display = 'none';
+                        printContainer.innerHTML = '';
+                    }, 1000);
+                }
+            }, 120000); // 2 minute timeout
         }
         
         async function editRecord(rowIndex) {
@@ -3194,7 +3298,7 @@
         }
         
         function deleteExistingPhoto(index) {
-            if (confirm('Delete this photo? This action cannot be undone.')) {
+            if (confirm('Delete this photo? This will remove it from cloud storage and cannot be undone.')) {
                 window.deletedPhotoIndices.add(index);
                 const photoDiv = document.getElementById(`existingPhoto${index}`);
                 if (photoDiv) {
@@ -3205,6 +3309,60 @@
                         deleteBtn.textContent = '✓';
                         deleteBtn.style.background = 'rgba(0,150,0,0.8)';
                     }
+                }
+            }
+        }
+        
+        async function deletePhotoFromCloud(photoPath) {
+            // Determine which cloud provider and delete accordingly
+            if (photoPath.startsWith('DROPBOX:')) {
+                const dropboxPath = photoPath.replace('DROPBOX:', '');
+                try {
+                    await fetch('https://api.dropboxapi.com/2/files/delete_v2', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.dropbox.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            path: dropboxPath
+                        })
+                    });
+                    console.log('Deleted from Dropbox:', dropboxPath);
+                } catch (error) {
+                    console.error('Error deleting from Dropbox:', error);
+                }
+            } else if (photoPath.startsWith('ONEDRIVE:')) {
+                const onedrivePath = photoPath.replace('ONEDRIVE:', '');
+                try {
+                    await fetch(
+                        `https://graph.microsoft.com/v1.0/me/drive/root:${onedrivePath}`,
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${config.onedrive.token}`
+                            }
+                        }
+                    );
+                    console.log('Deleted from OneDrive:', onedrivePath);
+                } catch (error) {
+                    console.error('Error deleting from OneDrive:', error);
+                }
+            } else if (photoPath.startsWith('GDRIVE:')) {
+                const fileId = photoPath.replace('GDRIVE:', '');
+                try {
+                    await fetch(
+                        `https://www.googleapis.com/drive/v3/files/${fileId}`,
+                        {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${config.drive.token}`
+                            }
+                        }
+                    );
+                    console.log('Deleted from Google Drive:', fileId);
+                } catch (error) {
+                    console.error('Error deleting from Google Drive:', error);
                 }
             }
         }
@@ -3270,8 +3428,27 @@
                     // Handle photo deletions
                     let existingPhotoLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
                     
-                    // Remove deleted photos
+                    // Delete photos from cloud storage
                     if (window.deletedPhotoIndices && window.deletedPhotoIndices.size > 0) {
+                        const deletionPromises = [];
+                        window.deletedPhotoIndices.forEach(index => {
+                            if (existingPhotoLinks[index]) {
+                                deletionPromises.push(deletePhotoFromCloud(existingPhotoLinks[index]));
+                            }
+                        });
+                        
+                        // Wait for all deletions to complete
+                        if (deletionPromises.length > 0) {
+                            try {
+                                await Promise.all(deletionPromises);
+                                console.log(`Deleted ${deletionPromises.length} photo(s) from cloud storage`);
+                            } catch (error) {
+                                console.error('Some photos failed to delete from cloud:', error);
+                                // Continue anyway - we'll still remove from spreadsheet
+                            }
+                        }
+                        
+                        // Remove deleted photos from list
                         existingPhotoLinks = existingPhotoLinks.filter((link, index) => !window.deletedPhotoIndices.has(index));
                     }
                     
