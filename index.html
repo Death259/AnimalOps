@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AnimalOps - Animal Rescue Management</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=DM+Sans:wght@400;500;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --primary: #1e3a5f;
@@ -44,18 +47,19 @@
             position: relative;
             overflow: hidden;
         }
+
         .header-logo {
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 10px 0;
         }
-        
+
         .header-logo img {
             max-width: 100%;
             height: auto;
         }
-        
+
 
 
         .header::before {
@@ -65,14 +69,21 @@
             right: -10%;
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
             border-radius: 50%;
             animation: float 20s ease-in-out infinite;
         }
 
         @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-30px, 30px) scale(1.1); }
+
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+
+            50% {
+                transform: translate(-30px, 30px) scale(1.1);
+            }
         }
 
         .header-content {
@@ -101,7 +112,7 @@
             font-weight: 700;
             font-size: 28px;
             color: white;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
             position: relative;
             overflow: visible;
             border: 3px solid var(--accent);
@@ -111,7 +122,7 @@
             width: 48px;
             height: 48px;
             fill: white;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
         }
 
         h1 {
@@ -160,8 +171,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .config-grid {
@@ -297,7 +315,7 @@
             background: var(--primary);
             color: white;
         }
-        
+
         .btn-text {
             background: transparent;
             color: var(--text-light);
@@ -305,7 +323,7 @@
             padding: 0.5rem;
             text-decoration: underline;
         }
-        
+
         .btn-text:hover {
             color: var(--primary);
             background: transparent;
@@ -391,8 +409,15 @@
         }
 
         @keyframes slideUp {
-            from { transform: translateY(20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .modal-header {
@@ -443,7 +468,8 @@
             gap: 0.5rem;
         }
 
-        .help-section ol, .help-section ul {
+        .help-section ol,
+        .help-section ul {
             margin-left: 1.5rem;
             margin-top: 0.5rem;
         }
@@ -490,14 +516,14 @@
             border-left: 4px solid #FF9800;
             color: #E65100;
         }
-        
+
         .records-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
             font-size: 0.9rem;
         }
-        
+
         .records-table th {
             background: var(--primary);
             color: white;
@@ -509,29 +535,29 @@
             z-index: 10;
             user-select: none;
         }
-        
+
         .records-table th[onclick] {
             cursor: pointer;
             transition: background 0.2s;
         }
-        
+
         .records-table th[onclick]:hover {
             background: var(--primary-light);
         }
-        
+
         .records-table td {
             padding: 0.75rem;
             border-bottom: 1px solid var(--border);
         }
-        
+
         .records-table tbody tr {
             transition: background 0.2s;
         }
-        
+
         .records-table tbody tr:hover {
             background: rgba(77, 184, 196, 0.05);
         }
-        
+
         .edit-btn {
             padding: 0.4rem 0.8rem;
             background: var(--accent);
@@ -542,12 +568,12 @@
             font-size: 0.85rem;
             transition: all 0.2s;
         }
-        
+
         .edit-btn:hover {
             background: var(--accent-light);
             transform: translateY(-1px);
         }
-        
+
         .stat-card {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             padding: 1.5rem;
@@ -557,19 +583,19 @@
             box-shadow: 0 2px 8px var(--shadow);
             transition: transform 0.2s;
         }
-        
+
         .stat-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px var(--shadow);
         }
-        
+
         .stat-label {
             font-size: 0.9rem;
             opacity: 0.9;
             margin-bottom: 0.5rem;
             font-weight: 500;
         }
-        
+
         .stat-value {
             font-size: 2rem;
             font-weight: 700;
@@ -582,13 +608,13 @@
             gap: 1rem;
             margin-top: 1rem;
         }
-        
+
         .photo-controls {
             display: flex;
             gap: 1rem;
             margin-bottom: 1rem;
         }
-        
+
         .photo-controls button {
             flex: 1;
         }
@@ -634,14 +660,16 @@
             display: inline-block;
             width: 20px;
             height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-radius: 50%;
             border-top-color: white;
             animation: spin 0.8s linear infinite;
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         .hidden {
@@ -683,12 +711,12 @@
                 height: 50px;
                 font-size: 1.2rem;
             }
-            
+
             .header img {
                 max-height: 80px !important;
             }
         }
-        
+
         /* Print Styles */
         .print-page {
             page-break-after: always;
@@ -697,11 +725,11 @@
             min-height: 100vh;
             box-sizing: border-box;
         }
-        
+
         .print-cover {
             font-family: 'DM Sans', sans-serif;
         }
-        
+
         .print-cover h1 {
             color: var(--primary);
             font-family: 'Outfit', sans-serif;
@@ -710,43 +738,43 @@
             border-bottom: 4px solid var(--accent);
             padding-bottom: 1rem;
         }
-        
+
         .print-info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
             margin-bottom: 2rem;
         }
-        
+
         .print-info-item {
             border-left: 3px solid var(--accent);
             padding-left: 1rem;
         }
-        
+
         .print-info-label {
             font-weight: 600;
             color: var(--primary);
             font-size: 0.9rem;
             margin-bottom: 0.25rem;
         }
-        
+
         .print-info-value {
             font-size: 1.1rem;
             color: var(--text);
         }
-        
+
         .print-notes {
             margin-top: 2rem;
             padding: 1.5rem;
             background: #f8f8f8;
             border-radius: 8px;
         }
-        
+
         .print-notes h3 {
             color: var(--primary);
             margin-bottom: 0.5rem;
         }
-        
+
         .print-photo-page {
             display: flex;
             flex-direction: column;
@@ -754,7 +782,7 @@
             justify-content: center;
             padding: 0.5in !important;
         }
-        
+
         .print-photo-page img {
             max-width: 100%;
             max-height: calc(100vh - 3in);
@@ -762,7 +790,7 @@
             height: auto;
             object-fit: contain;
         }
-        
+
         .print-photo-caption {
             margin-top: 0.5rem;
             font-size: 1rem;
@@ -770,24 +798,24 @@
             text-align: center;
             max-height: 1.5in;
         }
-        
+
         @media print {
             body * {
                 visibility: hidden;
             }
-            
+
             #printContainer,
             #printContainer * {
                 visibility: visible;
             }
-            
+
             #printContainer {
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
             }
-            
+
             .print-page {
                 page-break-after: always;
                 page-break-inside: avoid;
@@ -796,7 +824,7 @@
                 height: 100vh;
                 box-sizing: border-box;
             }
-            
+
             .print-photo-page {
                 padding: 0.5in !important;
                 height: 100vh;
@@ -806,7 +834,7 @@
                 justify-content: center;
                 align-items: center;
             }
-            
+
             .print-photo-page img {
                 max-width: 90%;
                 max-height: calc(100vh - 2.5in);
@@ -814,7 +842,7 @@
                 height: auto;
                 object-fit: contain;
             }
-            
+
             .print-photo-caption {
                 margin-top: 0.25in;
                 font-size: 12pt;
@@ -823,10 +851,12 @@
         }
     </style>
 </head>
+
 <body>
     <header class="header">
         <div class="header-content">
-            <div style="display: flex; justify-content: flex-start; align-items: center; padding: 10px 0; background: transparent;">
+            <div
+                style="display: flex; justify-content: flex-start; align-items: center; padding: 10px 0; background: transparent;">
 
                 <img src="animalops-logo.png" alt="AnimalOps" style="max-width: 100%; height: auto; max-height: 140px;">
             </div>
@@ -838,16 +868,20 @@
         <!-- Setup Section -->
         <div class="card setup-section active" id="setupSection">
             <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin-bottom: 0.5rem;">Configuration</h2>
-            <p style="color: var(--text-light); margin-bottom: 2rem;">Connect one service from each section below to get started.</p>
-            
+            <p style="color: var(--text-light); margin-bottom: 2rem;">Connect one service from each section below to get
+                started.</p>
+
             <!-- Photo Storage Section -->
             <div style="margin-bottom: 2.5rem;">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <h3
+                    style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     📸 Photo Storage
-                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One - Required)</span>
+                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One -
+                        Required)</span>
                 </h3>
-                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal photos and images</p>
-                
+                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal photos and
+                    images</p>
+
                 <div class="config-grid">
                     <!-- Dropbox Configuration -->
                     <div class="config-item" id="dropboxConfig">
@@ -855,8 +889,9 @@
                             📦 Dropbox
                             <span class="status-badge disconnected" id="dropboxStatus">Not Connected</span>
                         </h3>
-                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
-                        
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos
+                            and documents</p>
+
                         <div id="dropboxOAuthSection">
                             <div class="button-group" style="margin-top: 0rem;">
                                 <button class="btn btn-primary" onclick="signInWithDropbox()" id="dropboxSignInBtn">
@@ -866,36 +901,40 @@
                                     <span>📖 Help</span>
                                 </button>
                             </div>
-                            
-                            <div id="dropboxConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
+
+                            <div id="dropboxConnectionInfo"
+                                style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
                                 <p style="margin: 0; color: var(--success);"><strong>✓ Connected to Dropbox</strong></p>
-                                
+
                                 <div id="dropboxFolderSection" style="margin-top: 1rem;">
                                     <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Folder:</p>
-                                    <button class="btn btn-secondary" onclick="openDropboxFolderPicker()" style="font-size: 0.9rem;">
+                                    <button class="btn btn-secondary" onclick="openDropboxFolderPicker()"
+                                        style="font-size: 0.9rem;">
                                         <span>📁 Browse Folders</span>
                                     </button>
-                                    <p id="selectedDropboxFolder" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
+                                    <p id="selectedDropboxFolder"
+                                        style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
                                 </div>
-                                
-                                <button class="btn btn-outline" onclick="disconnectDropbox()" style="margin-top: 0.5rem; font-size: 0.85rem;">
+
+                                <button class="btn btn-outline" onclick="disconnectDropbox()"
+                                    style="margin-top: 0.5rem; font-size: 0.85rem;">
                                     <span>Disconnect</span>
                                 </button>
                             </div>
                         </div>
-                        
+
                         <!-- Fallback to manual token (hidden by default) -->
                         <div id="dropboxManualSection" style="display: none;">
                             <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
                                 <strong>Advanced:</strong> Manual token entry
                             </p>
-                            
+
                             <label for="dropboxToken">API Access Token</label>
                             <input type="password" id="dropboxToken" placeholder="sl.B...">
-                            
+
                             <label for="dropboxFolderManual">Folder Path (optional)</label>
                             <input type="text" id="dropboxFolderManual" placeholder="/AnimalOps" value="/AnimalOps">
-                            
+
                             <div class="button-group">
                                 <button class="btn btn-primary" onclick="connectDropboxManual()">
                                     <span>Connect</span>
@@ -905,8 +944,9 @@
                                 </button>
                             </div>
                         </div>
-                        
-                        <button class="btn btn-text" onclick="toggleDropboxManualMode()" style="margin-top: 1rem; font-size: 0.85rem;">
+
+                        <button class="btn btn-text" onclick="toggleDropboxManualMode()"
+                            style="margin-top: 1rem; font-size: 0.85rem;">
                             <span id="toggleDropboxModeText">Use manual token instead</span>
                         </button>
                     </div>
@@ -917,14 +957,15 @@
                             ☁️ OneDrive
                             <span class="status-badge disconnected" id="onedriveStatus">Not Connected</span>
                         </h3>
-                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
-                        
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos
+                            and documents</p>
+
                         <label for="onedriveToken">API Access Token</label>
                         <input type="password" id="onedriveToken" placeholder="EwB...">
-                        
+
                         <label for="onedriveFolder">Folder Path (optional)</label>
                         <input type="text" id="onedriveFolder" placeholder="/AnimalOps" value="/AnimalOps">
-                        
+
                         <div class="button-group">
                             <button class="btn btn-primary" onclick="connectOneDrive()">
                                 <span>Connect</span>
@@ -941,14 +982,15 @@
                             💾 Google Drive
                             <span class="status-badge disconnected" id="driveStatus">Not Connected</span>
                         </h3>
-                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos and documents</p>
-                        
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos
+                            and documents</p>
+
                         <label for="driveToken">API Access Token</label>
                         <input type="password" id="driveToken" placeholder="ya29.a0...">
-                        
+
                         <label for="driveFolder">Folder Name (optional)</label>
                         <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
-                        
+
                         <div class="button-group">
                             <button class="btn btn-primary" onclick="connectGoogleDrive()">
                                 <span>Connect</span>
@@ -963,12 +1005,15 @@
 
             <!-- Data Storage Section -->
             <div style="margin-bottom: 2.5rem;">
-                <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                <h3
+                    style="font-family: 'Outfit', sans-serif; font-size: 1.4rem; color: var(--primary); margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
                     📊 Data Storage
-                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One - Required)</span>
+                    <span style="font-size: 0.9rem; font-weight: 400; color: var(--text-light);">(Choose One -
+                        Required)</span>
                 </h3>
-                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal records and information</p>
-                
+                <p style="color: var(--text-light); font-size: 0.95rem; margin-bottom: 1rem;">Store animal records and
+                    information</p>
+
                 <div class="config-grid">
                     <!-- Google Sheets Configuration -->
                     <div class="config-item" id="sheetsConfig">
@@ -976,8 +1021,9 @@
                             📊 Google Sheets
                             <span class="status-badge disconnected" id="sheetsStatus">Not Connected</span>
                         </h3>
-                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data and records</p>
-                        
+                        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal data
+                            and records</p>
+
                         <div id="sheetsOAuthSection">
                             <div class="button-group" style="margin-top: 0.5rem;">
                                 <button class="btn btn-primary" onclick="signInWithGoogle()" id="googleSignInBtn">
@@ -987,37 +1033,43 @@
                                     <span>📖 Help</span>
                                 </button>
                             </div>
-                            
-                            <p style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; font-style: italic;">
+
+                            <p
+                                style="color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; font-style: italic;">
                                 Token expires after ~1 hour - you'll be prompted to sign in again when needed.
                             </p>
-                            
-                            <div id="sheetsConnectionInfo" style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
-                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected as:</strong> <span id="sheetsUserEmail"></span></p>
-                                
+
+                            <div id="sheetsConnectionInfo"
+                                style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected as:</strong> <span
+                                        id="sheetsUserEmail"></span></p>
+
                                 <div id="sheetsPickerSection" style="margin-top: 1rem;">
                                     <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Spreadsheet:</p>
-                                    <button class="btn btn-secondary" onclick="openSpreadsheetPicker()" style="font-size: 0.9rem;">
+                                    <button class="btn btn-secondary" onclick="openSpreadsheetPicker()"
+                                        style="font-size: 0.9rem;">
                                         <span>📊 Browse My Spreadsheets</span>
                                     </button>
-                                    <p id="selectedSpreadsheet" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
+                                    <p id="selectedSpreadsheet"
+                                        style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
                                 </div>
-                                
-                                <button class="btn btn-outline" onclick="disconnectGoogleSheets()" style="margin-top: 0.5rem; font-size: 0.85rem;">
+
+                                <button class="btn btn-outline" onclick="disconnectGoogleSheets()"
+                                    style="margin-top: 0.5rem; font-size: 0.85rem;">
                                     <span>Disconnect</span>
                                 </button>
                             </div>
                         </div>
-                        
+
                         <!-- Fallback to manual token (hidden by default) -->
                         <div id="sheetsManualSection" style="display: none;">
                             <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
                                 <strong>Advanced:</strong> Manual token entry
                             </p>
-                            
+
                             <label for="sheetsToken">API Access Token</label>
                             <input type="password" id="sheetsToken" placeholder="ya29.a0...">
-                            
+
                             <div class="button-group">
                                 <button class="btn btn-primary" onclick="connectGoogleSheetsManual()">
                                     <span>Connect</span>
@@ -1027,8 +1079,9 @@
                                 </button>
                             </div>
                         </div>
-                        
-                        <button class="btn btn-text" onclick="toggleManualMode()" style="margin-top: 1rem; font-size: 0.85rem;">
+
+                        <button class="btn btn-text" onclick="toggleManualMode()"
+                            style="margin-top: 1rem; font-size: 0.85rem;">
                             <span id="toggleModeText">Use manual token instead</span>
                         </button>
                     </div>
@@ -1038,14 +1091,18 @@
             <div class="alert alert-info" style="margin-top: 2rem;">
                 <span style="font-size: 1.2rem;">ℹ️</span>
                 <div>
-                    <strong>Setup Requirements:</strong> Connect <strong>one service from Data Storage</strong> (Google Sheets) and <strong>one service from Photo Storage</strong> (Dropbox, OneDrive, or Google Drive). Both are required to use AnimalOps.
+                    <strong>Setup Requirements:</strong> Connect <strong>one service from Data Storage</strong> (Google
+                    Sheets) and <strong>one service from Photo Storage</strong> (Dropbox, OneDrive, or Google Drive).
+                    Both are required to use AnimalOps.
                 </div>
             </div>
 
             <div class="alert alert-info" style="margin-top: 1rem;">
                 <span style="font-size: 1.2rem;">🔒</span>
                 <div>
-                    <strong>Privacy Note:</strong> Your API tokens are stored only in your browser's session and are never sent to any server except Google and your chosen photo storage provider directly. They will be cleared when you close this tab.
+                    <strong>Privacy Note:</strong> Your API tokens are stored only in your browser's session and are
+                    never sent to any server except Google and your chosen photo storage provider directly. They will be
+                    cleared when you close this tab.
                 </div>
             </div>
         </div>
@@ -1058,19 +1115,19 @@
                     <span>📋 View Records</span>
                 </button>
             </div>
-            
+
             <form id="animalForm">
                 <div class="form-grid">
                     <div>
                         <label for="animalId">Animal ID *</label>
                         <input type="text" id="animalId" placeholder="e.g., A-2024-001" required>
                     </div>
-                    
+
                     <div>
                         <label for="animalName">Animal Name</label>
                         <input type="text" id="animalName">
                     </div>
-                    
+
                     <div>
                         <label for="species">Species *</label>
                         <select id="species" required>
@@ -1083,17 +1140,17 @@
                             <option value="Other">Other</option>
                         </select>
                     </div>
-                    
+
                     <div>
                         <label for="breed">Breed</label>
                         <input type="text" id="breed">
                     </div>
-                    
+
                     <div>
                         <label for="age">Age/Age Estimate</label>
                         <input type="text" id="age" placeholder="e.g., 2 years, 6 months">
                     </div>
-                    
+
                     <div>
                         <label for="gender">Gender *</label>
                         <select id="gender" required>
@@ -1105,40 +1162,43 @@
                             <option value="Unknown">Unknown</option>
                         </select>
                     </div>
-                    
+
                     <div>
                         <label for="intakeDate">Intake Date *</label>
                         <input type="date" id="intakeDate" required>
                     </div>
-                    
+
                     <div>
                         <label for="buildingId">Building ID *</label>
                         <input type="text" id="buildingId" placeholder="e.g., Building A, Kennel 5" required>
                     </div>
-                    
+
                     <div>
                         <label for="color">Color *</label>
                         <input type="text" id="color" placeholder="e.g., Brown, White/Black" required>
                     </div>
-                    
+
                     <div>
                         <label for="bodyConditionScore">Body Condition Score</label>
                         <input type="text" id="bodyConditionScore" placeholder="e.g., 5, Ideal, 3/9">
                     </div>
-                    
+
                     <div>
                         <label for="foodWaterAvailability">Food and Water Availability</label>
-                        <input type="text" id="foodWaterAvailability" placeholder="e.g., Fresh water available, Fed twice daily">
+                        <input type="text" id="foodWaterAvailability"
+                            placeholder="e.g., Fresh water available, Fed twice daily">
                     </div>
-                    
+
                     <div>
                         <label for="housingDescription">Housing Description</label>
-                        <input type="text" id="housingDescription" placeholder="e.g., Indoor kennel, Outdoor run with shelter">
+                        <input type="text" id="housingDescription"
+                            placeholder="e.g., Indoor kennel, Outdoor run with shelter">
                     </div>
                 </div>
 
                 <label for="healthNotes">Health Notes</label>
-                <textarea id="healthNotes" placeholder="Any health concerns, medical history, special needs..."></textarea>
+                <textarea id="healthNotes"
+                    placeholder="Any health concerns, medical history, special needs..."></textarea>
 
                 <label for="behaviorNotes">Behavior Notes</label>
                 <textarea id="behaviorNotes" placeholder="Temperament, behavioral observations..."></textarea>
@@ -1151,12 +1211,13 @@
                     <button type="button" class="btn btn-outline" onclick="document.getElementById('photos').click()">
                         <span>📁 Upload Photos</span>
                     </button>
-                    <button type="button" class="btn btn-outline" id="syncPhotosBtn" onclick="syncPhotosFromCloud()" style="display: none;">
+                    <button type="button" class="btn btn-outline" id="syncPhotosBtn" onclick="syncPhotosFromCloud()"
+                        style="display: none;">
                         <span>🔄 Sync Photos from Cloud</span>
                     </button>
                 </div>
                 <input type="file" id="photos" accept="image/*" multiple style="display: none;">
-                
+
                 <!-- Camera Modal -->
                 <div id="cameraModal" class="modal" style="display: none;">
                     <div class="modal-content" style="max-width: 800px;">
@@ -1165,7 +1226,8 @@
                             <button class="close-btn" onclick="closeCamera()">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <video id="cameraVideo" autoplay playsinline style="width: 100%; max-height: 500px; background: #000;"></video>
+                            <video id="cameraVideo" autoplay playsinline
+                                style="width: 100%; max-height: 500px; background: #000;"></video>
                             <canvas id="cameraCanvas" style="display: none;"></canvas>
                             <div style="margin-top: 1rem; text-align: center;">
                                 <button type="button" class="btn btn-secondary" onclick="capturePhoto()">
@@ -1178,7 +1240,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Photo Sync Modal -->
                 <div id="photoSyncModal" class="modal" style="display: none;">
                     <div class="modal-content" style="max-width: 900px;">
@@ -1190,18 +1252,20 @@
                             <div id="photoSyncContent" style="min-height: 200px;">
                                 <p style="text-align: center; padding: 2rem;">Loading photos from cloud storage...</p>
                             </div>
-                            <div style="margin-top: 1.5rem; text-align: right; border-top: 1px solid var(--border); padding-top: 1rem;">
+                            <div
+                                style="margin-top: 1.5rem; text-align: right; border-top: 1px solid var(--border); padding-top: 1rem;">
                                 <button type="button" class="btn btn-outline" onclick="closePhotoSync()">
                                     <span>Cancel</span>
                                 </button>
-                                <button type="button" class="btn btn-secondary" id="addSelectedPhotosBtn" onclick="addSelectedPhotos()" style="display: none;">
+                                <button type="button" class="btn btn-secondary" id="addSelectedPhotosBtn"
+                                    onclick="addSelectedPhotos()" style="display: none;">
                                     <span>Add Selected Photos</span>
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
-                
+
                 <div id="photoPreview" class="photo-preview"></div>
 
                 <div class="button-group">
@@ -1220,14 +1284,16 @@
             <div id="successMessage" class="alert alert-success hidden" style="margin-top: 1.5rem;">
                 <span style="font-size: 1.2rem;">✅</span>
                 <div>
-                    <strong>Success!</strong> Animal record has been saved to Google Sheets and photos uploaded to your cloud storage.
+                    <strong>Success!</strong> Animal record has been saved to Google Sheets and photos uploaded to your
+                    cloud storage.
                 </div>
             </div>
         </div>
 
         <!-- View Records Section -->
         <div class="card setup-section" id="recordsSection">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin: 0;">View & Edit Records</h2>
                 <div style="display: flex; gap: 1rem;">
                     <button class="btn btn-primary" onclick="resetForm(); showForm();">
@@ -1241,10 +1307,11 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Stats Dashboard -->
             <div id="statsDashboard" style="display: none; margin-bottom: 2rem;">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
                     <div class="stat-card">
                         <div class="stat-label">Total Animals</div>
                         <div class="stat-value" id="statTotal">0</div>
@@ -1281,23 +1348,24 @@
                     </div>
                 </div>
             </div>
-            
+
             <div style="margin-bottom: 1.5rem;">
-                <input type="text" id="searchRecords" placeholder="Search by name, species, Animal ID..." 
-                       style="width: 100%;" oninput="filterRecords()">
+                <input type="text" id="searchRecords" placeholder="Search by name, species, Animal ID..."
+                    style="width: 100%;" oninput="filterRecords()">
             </div>
-            
-            <div id="recordsTotals" style="margin-bottom: 1rem; padding: 0.75rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px; display: none;">
+
+            <div id="recordsTotals"
+                style="margin-bottom: 1rem; padding: 0.75rem; background: rgba(77, 184, 196, 0.1); border-radius: 8px; display: none;">
                 <strong>Showing:</strong> <span id="displayedCount">0</span> animals
                 <span id="totalCount" style="color: var(--text-light); margin-left: 1rem;"></span>
             </div>
-            
+
             <div id="recordsContainer" style="overflow-x: auto;">
                 <p style="color: var(--text-light); text-align: center; padding: 2rem;">
                     Click "Refresh Records" to load animal records from Google Sheets.
                 </p>
             </div>
-            
+
             <div style="margin-top: 1.5rem; text-align: center;">
                 <button class="btn btn-outline" onclick="resetForm(); showForm();">
                     <span>➕ Add New Animal</span>
@@ -1305,7 +1373,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Print Preview Container (hidden) -->
     <div id="printContainer" style="display: none;"></div>
 
@@ -1319,7 +1387,7 @@
                 <h2>Help & Documentation</h2>
                 <button class="close-modal" onclick="closeHelp()">×</button>
             </div>
-            
+
             <div id="helpContent">
                 <!-- Content populated by JavaScript -->
             </div>
@@ -1333,7 +1401,7 @@
                 <h2>Select a Spreadsheet</h2>
                 <button class="close-modal" onclick="closeSpreadsheetPicker()">×</button>
             </div>
-            
+
             <div id="spreadsheetPickerContent" style="padding: 1rem;">
                 <p style="color: var(--text-light); margin-bottom: 1rem;">Loading your Google Sheets...</p>
                 <div id="spreadsheetList"></div>
@@ -1348,9 +1416,10 @@
                 <h2>Select a Folder</h2>
                 <button class="close-modal" onclick="closeDropboxFolderPicker()">×</button>
             </div>
-            
+
             <div id="dropboxFolderPickerContent" style="padding: 1rem;">
-                <div id="dropboxBreadcrumb" style="margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">
+                <div id="dropboxBreadcrumb"
+                    style="margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">
                     <strong>Current:</strong> <span id="currentDropboxPath">/</span>
                 </div>
                 <div id="dropboxFolderList"></div>
@@ -1375,14 +1444,14 @@
             scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.metadata.readonly',
             authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth'
         };
-        
+
         const DROPBOX_OAUTH_CONFIG = {
             clientId: 'bvvotc2lattvdar',
             redirectUri: 'https://death259.github.io/AnimalOps/',
             authEndpoint: 'https://www.dropbox.com/oauth2/authorize',
             tokenEndpoint: 'https://api.dropboxapi.com/oauth2/token'
         };
-        
+
         // Global state
         let config = {
             sheets: {
@@ -1415,7 +1484,7 @@
         };
 
         let selectedPhotos = [];
-        
+
         // OAuth PKCE Helper Functions
         // Check for OAuth callback on page load
         window.addEventListener('DOMContentLoaded', () => {
@@ -1423,7 +1492,7 @@
             handleDropboxOAuthCallback();
             loadSavedConfig();
         });
-        
+
         function loadSavedConfig() {
             // Load saved OAuth credentials from localStorage
             const savedSheets = localStorage.getItem('animalops_sheets_config');
@@ -1431,59 +1500,59 @@
                 try {
                     const sheetsConfig = JSON.parse(savedSheets);
                     config.sheets = { ...config.sheets, ...sheetsConfig };
-                    
+
                     if (config.sheets.connected && config.sheets.token) {
                         // Update UI
                         document.getElementById('sheetsStatus').textContent = 'Connected';
                         document.getElementById('sheetsStatus').className = 'status-badge connected';
                         document.getElementById('sheetsConfig').classList.add('connected');
-                        
+
                         if (config.sheets.userEmail) {
                             document.getElementById('sheetsConnectionInfo').style.display = 'block';
                             document.getElementById('sheetsUserEmail').textContent = config.sheets.userEmail;
                         }
-                        
+
                         // Show spreadsheet info if one was selected
                         if (config.sheets.spreadsheetId && config.sheets.spreadsheetName) {
                             document.getElementById('selectedSpreadsheet').innerHTML = `<strong>Selected:</strong> ${config.sheets.spreadsheetName}`;
                         }
-                        
+
                         // Check if token needs refresh
                         if (config.sheets.expiresAt && Date.now() >= config.sheets.expiresAt) {
                             refreshGoogleToken();
                         }
-                        
+
                         checkReadyState();
                     }
                 } catch (e) {
                     console.error('Error loading saved config:', e);
                 }
             }
-            
+
             // Load saved Dropbox config
             const savedDropbox = localStorage.getItem('animalops_dropbox_config');
             if (savedDropbox) {
                 try {
                     const dropboxConfig = JSON.parse(savedDropbox);
                     config.dropbox = { ...config.dropbox, ...dropboxConfig };
-                    
+
                     if (config.dropbox.connected && config.dropbox.token) {
                         // Update UI
                         document.getElementById('dropboxStatus').textContent = 'Connected';
                         document.getElementById('dropboxStatus').className = 'status-badge connected';
                         document.getElementById('dropboxConfig').classList.add('connected');
                         document.getElementById('dropboxConnectionInfo').style.display = 'block';
-                        
+
                         // Show selected folder
                         if (config.dropbox.folder) {
                             document.getElementById('selectedDropboxFolder').innerHTML = `<strong>Selected:</strong> ${config.dropbox.folder}`;
                         }
-                        
+
                         // Check if token needs refresh
                         if (config.dropbox.expiresAt && Date.now() >= config.dropbox.expiresAt) {
                             refreshDropboxToken();
                         }
-                        
+
                         checkReadyState();
                     }
                 } catch (e) {
@@ -1491,18 +1560,18 @@
                 }
             }
         }
-        
+
         function saveConfig() {
             localStorage.setItem('animalops_sheets_config', JSON.stringify(config.sheets));
             localStorage.setItem('animalops_dropbox_config', JSON.stringify(config.dropbox));
         }
-        
+
         async function signInWithGoogle() {
             if (!OAUTH_CONFIG.clientId || OAUTH_CONFIG.clientId.includes('YOUR_CLIENT_ID')) {
                 alert('OAuth is not configured yet. Please see the setup instructions in the documentation.\n\nFor now, you can use "Use manual token instead" below.');
                 return;
             }
-            
+
             // Use implicit flow - simple and reliable
             const params = new URLSearchParams({
                 client_id: OAUTH_CONFIG.clientId,
@@ -1512,11 +1581,11 @@
                 include_granted_scopes: 'true',
                 state: 'google_sheets_oauth'
             });
-            
+
             const authUrl = `${OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
             window.location.href = authUrl;
         }
-        
+
         async function handleOAuthCallback() {
             // Check for implicit flow response (token in URL hash #)
             if (window.location.hash) {
@@ -1526,19 +1595,19 @@
                 const expiresIn = params.get('expires_in');
                 const state = params.get('state');
                 const error = params.get('error');
-                
+
                 // ONLY handle Google OAuth callbacks (must have state='google_sheets_oauth')
                 if (!state || state !== 'google_sheets_oauth') {
                     // Not a Google callback, skip completely
                     return;
                 }
-                
+
                 if (error) {
                     alert(`Authorization failed: ${error}`);
                     window.history.replaceState({}, document.title, window.location.pathname);
                     return;
                 }
-                
+
                 if (accessToken) {
                     try {
                         // Get user email
@@ -1547,9 +1616,9 @@
                                 'Authorization': `Bearer ${accessToken}`
                             }
                         });
-                        
+
                         const userInfo = await userInfoResponse.json();
-                        
+
                         // Save tokens and config
                         config.sheets.connected = true;
                         config.sheets.token = accessToken;
@@ -1557,21 +1626,21 @@
                         config.sheets.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
                         config.sheets.spreadsheetId = null; // Will be set when user picks
                         config.sheets.userEmail = userInfo.email;
-                        
+
                         saveConfig();
-                        
+
                         // Update UI
                         document.getElementById('sheetsStatus').textContent = 'Connected';
                         document.getElementById('sheetsStatus').className = 'status-badge connected';
                         document.getElementById('sheetsConfig').classList.add('connected');
                         document.getElementById('sheetsConnectionInfo').style.display = 'block';
                         document.getElementById('sheetsUserEmail').textContent = userInfo.email;
-                        
+
                         checkReadyState();
-                        
+
                         // Clean up
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        
+
                     } catch (error) {
                         console.error('OAuth error:', error);
                         alert(`Failed to connect: ${error.message}`);
@@ -1580,27 +1649,27 @@
                 }
             }
         }
-        
+
         async function refreshGoogleToken() {
             // Implicit flow doesn't have refresh tokens
             // Prompt user to sign in again
             console.log('Token expired, user needs to sign in again');
-            
+
             // Clear expired token
             config.sheets.connected = false;
             config.sheets.token = null;
             saveConfig();
-            
+
             // Update UI to show disconnected
             document.getElementById('sheetsStatus').textContent = 'Token Expired';
             document.getElementById('sheetsStatus').className = 'status-badge disconnected';
-            
+
             // Alert user
             alert('Your Google Sheets session has expired. Please sign in again.');
-            
+
             return false;
         }
-        
+
         function disconnectGoogleSheets() {
             if (confirm('Are you sure you want to disconnect Google Sheets? You will need to sign in again.')) {
                 config.sheets = {
@@ -1611,29 +1680,29 @@
                     expiresAt: null,
                     userEmail: null
                 };
-                
+
                 localStorage.removeItem('animalops_sheets_config');
-                
+
                 document.getElementById('sheetsStatus').textContent = 'Not Connected';
                 document.getElementById('sheetsStatus').className = 'status-badge disconnected';
                 document.getElementById('sheetsConfig').classList.remove('connected');
                 document.getElementById('sheetsConnectionInfo').style.display = 'none';
                 document.getElementById('sheetsUserEmail').textContent = '';
                 document.getElementById('selectedSpreadsheet').textContent = '';
-                
+
                 checkReadyState();
             }
         }
-        
+
         // ============ SPREADSHEET PICKER ============
-        
+
         async function openSpreadsheetPicker() {
             const modal = document.getElementById('spreadsheetPickerModal');
             const listContainer = document.getElementById('spreadsheetList');
-            
+
             modal.style.display = 'flex';
             listContainer.innerHTML = '<p style="text-align: center; padding: 2rem;"><em>Loading your spreadsheets...</em></p>';
-            
+
             try {
                 // Fetch spreadsheets from Google Drive
                 const response = await fetch(
@@ -1644,18 +1713,18 @@
                         }
                     }
                 );
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch spreadsheets');
                 }
-                
+
                 const data = await response.json();
-                
+
                 if (!data.files || data.files.length === 0) {
                     listContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No spreadsheets found in your Google Drive.</p>';
                     return;
                 }
-                
+
                 // Display spreadsheets as a list
                 listContainer.innerHTML = `
                     <div style="max-height: 400px; overflow-y: auto;">
@@ -1670,7 +1739,7 @@
                         `).join('')}
                     </div>
                 `;
-                
+
                 // Add hover effects via CSS
                 const style = document.createElement('style');
                 style.textContent = `
@@ -1684,22 +1753,22 @@
                     style.id = 'spreadsheet-picker-styles';
                     document.head.appendChild(style);
                 }
-                
+
             } catch (error) {
                 console.error('Error fetching spreadsheets:', error);
                 listContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error);">Failed to load spreadsheets. Please try again.</p>';
             }
         }
-        
+
         async function selectSpreadsheet(spreadsheetId, spreadsheetName) {
             // Save the selected spreadsheet
             config.sheets.spreadsheetId = spreadsheetId;
             config.sheets.spreadsheetName = spreadsheetName;
             saveConfig();
-            
+
             // Update UI
             document.getElementById('selectedSpreadsheet').innerHTML = `<strong>Selected:</strong> ${spreadsheetName}`;
-            
+
             // Initialize headers in the selected spreadsheet
             try {
                 await initializeSheetHeaders();
@@ -1710,18 +1779,18 @@
                 alert('Failed to initialize spreadsheet. Please make sure you have edit access to this spreadsheet.');
             }
         }
-        
+
         function closeSpreadsheetPicker() {
             document.getElementById('spreadsheetPickerModal').style.display = 'none';
         }
-        
+
         // ============ END SPREADSHEET PICKER ============
-        
+
         function toggleManualMode() {
             const oauthSection = document.getElementById('sheetsOAuthSection');
             const manualSection = document.getElementById('sheetsManualSection');
             const toggleText = document.getElementById('toggleModeText');
-            
+
             if (oauthSection.style.display === 'none') {
                 // Show OAuth, hide manual
                 oauthSection.style.display = 'block';
@@ -1734,18 +1803,18 @@
                 toggleText.textContent = 'Use Sign in with Google instead';
             }
         }
-        
+
         function showOAuthSection() {
             document.getElementById('sheetsOAuthSection').style.display = 'block';
             document.getElementById('sheetsManualSection').style.display = 'none';
             document.getElementById('toggleModeText').textContent = 'Use manual token instead';
         }
-        
+
         // Manual token connection (fallback)
         async function connectGoogleSheetsManual() {
             const spreadsheetId = document.getElementById('sheetsId').value.trim();
             const token = document.getElementById('sheetsToken').value.trim();
-            
+
             if (!spreadsheetId || !token) {
                 alert('Please enter both Spreadsheet ID and Access Token');
                 return;
@@ -1766,14 +1835,14 @@
                     config.sheets.connected = true;
                     config.sheets.spreadsheetId = spreadsheetId;
                     config.sheets.token = token;
-                    
+
                     document.getElementById('sheetsStatus').textContent = 'Connected';
                     document.getElementById('sheetsStatus').className = 'status-badge connected';
                     document.getElementById('sheetsConfig').classList.add('connected');
-                    
+
                     // Initialize sheet headers if needed
                     await initializeSheetHeaders();
-                    
+
                     checkReadyState();
                 } else {
                     const error = await response.json();
@@ -1783,30 +1852,30 @@
                 alert(`Connection error: ${error.message}`);
             }
         }
-        
+
         // ============ DROPBOX OAUTH ============
-        
+
         async function signInWithDropbox() {
             if (!DROPBOX_OAUTH_CONFIG.clientId || DROPBOX_OAUTH_CONFIG.clientId.includes('YOUR_DROPBOX')) {
                 alert('Dropbox OAuth is not configured yet. Please see the setup instructions in the documentation.\n\nFor now, you can use "Use manual token instead" below.');
                 return;
             }
-            
+
             // No default folder - user must select one after connecting
-            
+
             // Dropbox OAuth - use simple token flow (returns token directly in hash)
             const params = new URLSearchParams({
                 client_id: DROPBOX_OAUTH_CONFIG.clientId,
                 redirect_uri: DROPBOX_OAUTH_CONFIG.redirectUri,
                 response_type: 'token' // Simple flow - token in URL hash
             });
-            
+
             const authUrl = `${DROPBOX_OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
-            
+
             // Redirect to Dropbox for authorization
             window.location.href = authUrl;
         }
-        
+
         async function handleDropboxOAuthCallback() {
             // Dropbox returns token in URL hash (#) for simple flow
             // Check if this is specifically a Dropbox callback (has access_token but NOT state='google_sheets_oauth')
@@ -1817,44 +1886,44 @@
                 const expiresIn = params.get('expires_in');
                 const state = params.get('state');
                 const error = params.get('error');
-                
+
                 // Skip if this is a Google callback (has state='google_sheets_oauth')
                 if (state === 'google_sheets_oauth') {
                     return;
                 }
-                
+
                 if (error) {
                     alert(`Dropbox authorization failed: ${error}`);
                     window.history.replaceState({}, document.title, window.location.pathname);
                     return;
                 }
-                
+
                 if (accessToken) {
                     try {
                         // Save tokens and config (no folder yet - user must select)
                         config.dropbox.connected = true;
                         config.dropbox.token = accessToken;
                         config.dropbox.folder = null; // User must select a folder
-                        
+
                         if (expiresIn) {
                             config.dropbox.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
                         }
-                        
+
                         saveConfig();
-                        
+
                         // Update UI
                         document.getElementById('dropboxStatus').textContent = 'Connected';
                         document.getElementById('dropboxStatus').className = 'status-badge connected';
                         document.getElementById('dropboxConfig').classList.add('connected');
                         document.getElementById('dropboxConnectionInfo').style.display = 'block';
-                        
+
                         // Don't show folder yet - user must select one
-                        
+
                         checkReadyState();
-                        
+
                         // Clean up
                         window.history.replaceState({}, document.title, window.location.pathname);
-                        
+
                     } catch (error) {
                         console.error('Dropbox OAuth error:', error);
                         alert(`Failed to connect to Dropbox: ${error.message}`);
@@ -1864,20 +1933,20 @@
                 }
             }
         }
-        
+
         async function refreshDropboxToken() {
             if (!config.dropbox.refreshToken) {
                 console.error('No Dropbox refresh token available');
                 return false;
             }
-            
+
             try {
                 const params = new URLSearchParams({
                     grant_type: 'refresh_token',
                     refresh_token: config.dropbox.refreshToken,
                     client_id: DROPBOX_OAUTH_CONFIG.clientId
                 });
-                
+
                 const tokenResponse = await fetch(DROPBOX_OAUTH_CONFIG.tokenEndpoint, {
                     method: 'POST',
                     headers: {
@@ -1885,33 +1954,33 @@
                     },
                     body: params
                 });
-                
+
                 if (!tokenResponse.ok) {
                     throw new Error('Failed to refresh Dropbox token');
                 }
-                
+
                 const tokens = await tokenResponse.json();
-                
+
                 config.dropbox.token = tokens.access_token;
-                
+
                 if (tokens.expires_in) {
                     config.dropbox.expiresAt = Date.now() + (tokens.expires_in * 1000);
                 }
-                
+
                 // Update refresh token if a new one was provided
                 if (tokens.refresh_token) {
                     config.dropbox.refreshToken = tokens.refresh_token;
                 }
-                
+
                 saveConfig();
                 return true;
-                
+
             } catch (error) {
                 console.error('Dropbox token refresh error:', error);
                 return false;
             }
         }
-        
+
         function disconnectDropbox() {
             if (confirm('Are you sure you want to disconnect Dropbox? You will need to sign in again.')) {
                 config.dropbox = {
@@ -1921,45 +1990,45 @@
                     expiresAt: null,
                     folder: null
                 };
-                
+
                 localStorage.removeItem('animalops_dropbox_config');
-                
+
                 document.getElementById('dropboxStatus').textContent = 'Not Connected';
                 document.getElementById('dropboxStatus').className = 'status-badge disconnected';
                 document.getElementById('dropboxConfig').classList.remove('connected');
                 document.getElementById('dropboxConnectionInfo').style.display = 'none';
                 document.getElementById('selectedDropboxFolder').textContent = '';
-                
+
                 checkReadyState();
             }
         }
-        
+
         // ============ DROPBOX FOLDER PICKER ============
-        
+
         let currentDropboxPath = '';
-        
+
         async function openDropboxFolderPicker() {
             const modal = document.getElementById('dropboxFolderPickerModal');
             modal.style.display = 'flex';
-            
+
             // Start at root
             currentDropboxPath = '';
             await loadDropboxFolders(currentDropboxPath);
         }
-        
+
         async function loadDropboxFolders(path) {
             const listContainer = document.getElementById('dropboxFolderList');
             const breadcrumb = document.getElementById('currentDropboxPath');
-            
+
             listContainer.innerHTML = '<p style="text-align: center; padding: 2rem;"><em>Loading folders...</em></p>';
             breadcrumb.textContent = path || '/';
-            
+
             // Check if token exists
             if (!config.dropbox.token) {
                 listContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--error);">Not connected to Dropbox. Please sign in first.</p>';
                 return;
             }
-            
+
             try {
                 const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
                     method: 'POST',
@@ -1973,22 +2042,22 @@
                         include_mounted_folders: false
                     })
                 });
-                
+
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     console.error('Dropbox API error:', errorData);
-                    
+
                     if (response.status === 401) {
                         throw new Error('Dropbox token expired. Please reconnect.');
                     }
                     throw new Error(errorData.error_summary || 'Failed to fetch folders');
                 }
-                
+
                 const data = await response.json();
-                
+
                 // Filter to only show folders
                 const folders = data.entries.filter(entry => entry['.tag'] === 'folder');
-                
+
                 if (folders.length === 0) {
                     listContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No subfolders in this location.</p>';
                 } else {
@@ -2010,7 +2079,7 @@
                             `).join('')}
                         </div>
                     `;
-                    
+
                     // Add hover effects via CSS if not already added
                     if (!document.getElementById('folder-picker-styles')) {
                         const style = document.createElement('style');
@@ -2025,18 +2094,18 @@
                         document.head.appendChild(style);
                     }
                 }
-                
+
             } catch (error) {
                 console.error('Error fetching Dropbox folders:', error);
                 listContainer.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--error);">Failed to load folders: ${error.message}<br><small>Check console for details.</small></p>`;
             }
         }
-        
+
         function navigateToDropboxFolder(folderPath, folderName) {
             currentDropboxPath = folderPath;
             loadDropboxFolders(currentDropboxPath);
         }
-        
+
         function navigateUpDropbox() {
             // Go up one level
             const parts = currentDropboxPath.split('/').filter(p => p);
@@ -2044,34 +2113,34 @@
             currentDropboxPath = parts.length > 0 ? '/' + parts.join('/') : '';
             loadDropboxFolders(currentDropboxPath);
         }
-        
+
         function selectCurrentDropboxFolder() {
             const folderPath = currentDropboxPath || '/';
-            
+
             // Save the selected folder
             config.dropbox.folder = folderPath;
             saveConfig();
-            
+
             // Update UI
             document.getElementById('selectedDropboxFolder').innerHTML = `<strong>Selected:</strong> ${folderPath}`;
-            
+
             closeDropboxFolderPicker();
-            
+
             // Check if we're ready to navigate to Add Animal page
             checkReadyState();
         }
-        
+
         function closeDropboxFolderPicker() {
             document.getElementById('dropboxFolderPickerModal').style.display = 'none';
         }
-        
+
         // ============ END DROPBOX FOLDER PICKER ============
-        
+
         function toggleDropboxManualMode() {
             const oauthSection = document.getElementById('dropboxOAuthSection');
             const manualSection = document.getElementById('dropboxManualSection');
             const toggleText = document.getElementById('toggleDropboxModeText');
-            
+
             if (oauthSection.style.display === 'none') {
                 // Show OAuth, hide manual
                 oauthSection.style.display = 'block';
@@ -2084,18 +2153,18 @@
                 toggleText.textContent = 'Use Sign in with Dropbox instead';
             }
         }
-        
+
         function showDropboxOAuthSection() {
             document.getElementById('dropboxOAuthSection').style.display = 'block';
             document.getElementById('dropboxManualSection').style.display = 'none';
             document.getElementById('toggleDropboxModeText').textContent = 'Use manual token instead';
         }
-        
+
         // Manual Dropbox connection (fallback)
         async function connectDropboxManual() {
             const token = document.getElementById('dropboxToken').value.trim();
             const folder = document.getElementById('dropboxFolderManual').value.trim() || '/AnimalOps';
-            
+
             if (!token) {
                 alert('Please enter your Dropbox Access Token');
                 return;
@@ -2114,11 +2183,11 @@
                     config.dropbox.connected = true;
                     config.dropbox.token = token;
                     config.dropbox.folder = folder;
-                    
+
                     document.getElementById('dropboxStatus').textContent = 'Connected';
                     document.getElementById('dropboxStatus').className = 'status-badge connected';
                     document.getElementById('dropboxConfig').classList.add('connected');
-                    
+
                     checkReadyState();
                 } else {
                     const error = await response.json();
@@ -2128,17 +2197,17 @@
                 alert(`Connection error: ${error.message}`);
             }
         }
-        
+
         // Token expiration handling
         async function handleGoogleSheetsError(error, response) {
             // Check if error is due to expired/invalid token
             if (response && (response.status === 401 || response.status === 403)) {
                 const errorData = await response.json().catch(() => ({}));
                 const errorMessage = errorData?.error?.message || '';
-                
-                if (errorMessage.includes('invalid') || errorMessage.includes('expired') || 
+
+                if (errorMessage.includes('invalid') || errorMessage.includes('expired') ||
                     errorMessage.includes('Invalid Credentials') || response.status === 401) {
-                    
+
                     // Try to refresh token if we have a refresh token
                     if (config.sheets.refreshToken) {
                         const refreshed = await refreshGoogleToken();
@@ -2147,23 +2216,23 @@
                             return true;
                         }
                     }
-                    
+
                     // Token has expired and couldn't refresh
                     const spreadsheetId = config.sheets.spreadsheetId;
-                    
+
                     // Disconnect
                     config.sheets.connected = false;
                     config.sheets.token = null;
                     document.getElementById('sheetsStatus').textContent = 'Token Expired';
                     document.getElementById('sheetsStatus').className = 'status-badge disconnected';
-                    
+
                     // Show helpful message
                     const shouldRefresh = confirm(
                         'Your Google Sheets access has expired.\n\n' +
                         'Click OK to go to the Configuration page and sign in again.\n\n' +
                         'Your Spreadsheet ID has been saved.'
                     );
-                    
+
                     if (shouldRefresh) {
                         showSetup();
                         // Keep the spreadsheet ID
@@ -2171,7 +2240,7 @@
                             document.getElementById('sheetsId').value = spreadsheetId;
                         }
                     }
-                    
+
                     return true; // Error was handled
                 }
             }
@@ -2182,7 +2251,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Set default intake date to today
             document.getElementById('intakeDate').valueAsDate = new Date();
-            
+
             // Photo preview handler
             document.getElementById('photos').addEventListener('change', handlePhotoSelection);
         });
@@ -2191,7 +2260,7 @@
         async function connectGoogleSheets() {
             const spreadsheetId = document.getElementById('sheetsId').value.trim();
             const token = document.getElementById('sheetsToken').value.trim();
-            
+
             if (!spreadsheetId || !token) {
                 alert('Please enter both Spreadsheet ID and Access Token');
                 return;
@@ -2212,14 +2281,14 @@
                     config.sheets.connected = true;
                     config.sheets.spreadsheetId = spreadsheetId;
                     config.sheets.token = token;
-                    
+
                     document.getElementById('sheetsStatus').textContent = 'Connected';
                     document.getElementById('sheetsStatus').className = 'status-badge connected';
                     document.getElementById('sheetsConfig').classList.add('connected');
-                    
+
                     // Initialize sheet headers if needed
                     await initializeSheetHeaders();
-                    
+
                     checkReadyState();
                 } else {
                     const error = await response.json();
@@ -2243,7 +2312,7 @@
                 );
 
                 const data = await response.json();
-                
+
                 // If no headers, create them
                 if (!data.values || data.values.length === 0) {
                     await fetch(
@@ -2256,8 +2325,8 @@
                             },
                             body: JSON.stringify({
                                 values: [[
-                                    'Timestamp', 'Internal ID', 'Name', 'Species', 'Breed', 
-                                    'Age', 'Gender', 'Intake Date', 'Animal ID', 
+                                    'Timestamp', 'Internal ID', 'Name', 'Species', 'Breed',
+                                    'Age', 'Gender', 'Intake Date', 'Animal ID',
                                     'Building ID', 'Color', 'Body Condition Score',
                                     'Food and Water Availability', 'Housing Description',
                                     'Health Notes', 'Behavior Notes', 'Photo Links', 'Photo Count'
@@ -2275,7 +2344,7 @@
         async function connectDropbox() {
             const token = document.getElementById('dropboxToken').value.trim();
             const folder = document.getElementById('dropboxFolderManual').value.trim() || '/AnimalOps';
-            
+
             if (!token) {
                 alert('Please enter Dropbox Access Token');
                 return;
@@ -2294,11 +2363,11 @@
                     config.dropbox.connected = true;
                     config.dropbox.token = token;
                     config.dropbox.folder = folder;
-                    
+
                     document.getElementById('dropboxStatus').textContent = 'Connected';
                     document.getElementById('dropboxStatus').className = 'status-badge connected';
                     document.getElementById('dropboxConfig').classList.add('connected');
-                    
+
                     // Disconnect other photo storage providers
                     if (config.onedrive.connected) {
                         disconnectOneDrive();
@@ -2306,7 +2375,7 @@
                     if (config.drive.connected) {
                         disconnectGoogleDrive();
                     }
-                    
+
                     checkReadyState();
                 } else {
                     const error = await response.json();
@@ -2316,7 +2385,7 @@
                 alert(`Connection error: ${error.message}`);
             }
         }
-        
+
         // Note: connectDropbox() has been replaced by signInWithDropbox() for OAuth
         // The manual connection is now connectDropboxManual()
 
@@ -2324,7 +2393,7 @@
         async function connectOneDrive() {
             const token = document.getElementById('onedriveToken').value.trim();
             const folder = document.getElementById('onedriveFolder').value.trim() || '/AnimalOps';
-            
+
             if (!token) {
                 alert('Please enter OneDrive Access Token');
                 return;
@@ -2342,11 +2411,11 @@
                     config.onedrive.connected = true;
                     config.onedrive.token = token;
                     config.onedrive.folder = folder;
-                    
+
                     document.getElementById('onedriveStatus').textContent = 'Connected';
                     document.getElementById('onedriveStatus').className = 'status-badge connected';
                     document.getElementById('onedriveConfig').classList.add('connected');
-                    
+
                     // Disconnect other photo storage providers
                     if (config.dropbox.connected) {
                         disconnectDropbox();
@@ -2354,7 +2423,7 @@
                     if (config.drive.connected) {
                         disconnectGoogleDrive();
                     }
-                    
+
                     checkReadyState();
                 } else {
                     const error = await response.json();
@@ -2369,7 +2438,7 @@
         async function connectGoogleDrive() {
             const token = document.getElementById('driveToken').value.trim();
             const folderName = document.getElementById('driveFolder').value.trim() || 'AnimalOps';
-            
+
             if (!token) {
                 alert('Please enter Google Drive Access Token');
                 return;
@@ -2387,14 +2456,14 @@
                     config.drive.connected = true;
                     config.drive.token = token;
                     config.drive.folder = folderName;
-                    
+
                     // Create or find the main folder
                     await ensureDriveFolder(folderName);
-                    
+
                     document.getElementById('driveStatus').textContent = 'Connected';
                     document.getElementById('driveStatus').className = 'status-badge connected';
                     document.getElementById('driveConfig').classList.add('connected');
-                    
+
                     // Disconnect other photo storage providers
                     if (config.dropbox.connected) {
                         disconnectDropbox();
@@ -2402,7 +2471,7 @@
                     if (config.onedrive.connected) {
                         disconnectOneDrive();
                     }
-                    
+
                     checkReadyState();
                 } else {
                     const error = await response.json();
@@ -2424,9 +2493,9 @@
                         }
                     }
                 );
-                
+
                 const searchData = await searchResponse.json();
-                
+
                 if (searchData.files && searchData.files.length > 0) {
                     config.drive.folderId = searchData.files[0].id;
                 } else {
@@ -2442,7 +2511,7 @@
                             mimeType: 'application/vnd.google-apps.folder'
                         })
                     });
-                    
+
                     const createData = await createResponse.json();
                     config.drive.folderId = createData.id;
                 }
@@ -2471,10 +2540,10 @@
         function checkReadyState() {
             // Check if both Google Sheets and photo storage are connected
             const sheetsReady = config.sheets.connected && config.sheets.spreadsheetId;
-            const storageReady = (config.dropbox.connected && config.dropbox.folder) || 
-                                 (config.onedrive.connected && config.onedrive.folder) || 
-                                 (config.drive.connected && config.drive.folderId);
-            
+            const storageReady = (config.dropbox.connected && config.dropbox.folder) ||
+                (config.onedrive.connected && config.onedrive.folder) ||
+                (config.drive.connected && config.drive.folderId);
+
             if (sheetsReady && storageReady) {
                 document.getElementById('setupSection').classList.remove('active');
                 showRecords();
@@ -2486,40 +2555,40 @@
             document.getElementById('recordsSection').classList.remove('active');
             document.getElementById('setupSection').classList.add('active');
         }
-        
+
         function showForm() {
             document.getElementById('setupSection').classList.remove('active');
             document.getElementById('recordsSection').classList.remove('active');
             document.getElementById('formSection').classList.add('active');
         }
-        
+
         function showRecords() {
             document.getElementById('setupSection').classList.remove('active');
             document.getElementById('formSection').classList.remove('active');
             document.getElementById('recordsSection').classList.add('active');
             loadRecords();
         }
-        
+
         // Records management
         let allRecords = [];
         let currentEditRow = null;
         let currentSortColumn = null;
         let currentSortDirection = 'asc';
-        
+
         async function loadRecords() {
             if (!config.sheets.connected) {
                 alert('Please connect to Google Sheets first');
                 showSetup();
                 return;
             }
-            
+
             // Reset sort state on refresh
             currentSortColumn = null;
             currentSortDirection = 'asc';
-            
+
             const container = document.getElementById('recordsContainer');
             container.innerHTML = '<p style="text-align: center; padding: 2rem;">Loading records...</p>';
-            
+
             try {
                 const response = await fetch(
                     `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1`,
@@ -2529,16 +2598,16 @@
                         }
                     }
                 );
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     const rows = data.values || [];
-                    
+
                     if (rows.length <= 1) {
                         container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No records found. Add your first animal!</p>';
                         return;
                     }
-                    
+
                     // Skip header row
                     allRecords = rows.slice(1).map((row, index) => ({
                         rowIndex: index + 2, // +2 because sheets are 1-indexed and we skip header
@@ -2561,7 +2630,7 @@
                         photoLinks: row[16] || '',
                         photoCount: row[17] || '0'
                     }));
-                    
+
                     updateStats();
                     displayRecords(allRecords);
                 } else {
@@ -2575,33 +2644,33 @@
                 container.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--error);">Error: ${error.message}</p>`;
             }
         }
-        
+
         function updateStats() {
             if (allRecords.length === 0) {
                 document.getElementById('statsDashboard').style.display = 'none';
                 return;
             }
-            
+
             // Show dashboard
             document.getElementById('statsDashboard').style.display = 'block';
-            
+
             // Total animals
             document.getElementById('statTotal').textContent = allRecords.length;
-            
+
             // Count by species
             const dogs = allRecords.filter(r => r.species.toLowerCase() === 'dog').length;
             const cats = allRecords.filter(r => r.species.toLowerCase() === 'cat').length;
             const other = allRecords.length - dogs - cats;
-            
+
             document.getElementById('statDogs').textContent = dogs;
             document.getElementById('statCats').textContent = cats;
             document.getElementById('statOther').textContent = other;
-            
+
             // Calculate average days in care
             const today = new Date();
             let totalDays = 0;
             let validDates = 0;
-            
+
             allRecords.forEach(record => {
                 if (record.intakeDate) {
                     const intakeDate = new Date(record.intakeDate);
@@ -2614,18 +2683,18 @@
                     }
                 }
             });
-            
+
             const avgDays = validDates > 0 ? Math.round(totalDays / validDates) : 0;
             document.getElementById('statAvgDays').textContent = avgDays;
-            
+
             // Animals with photos
             const withPhotos = allRecords.filter(r => parseInt(r.photoCount) > 0).length;
             document.getElementById('statWithPhotos').textContent = withPhotos;
-            
+
             // Recent intakes (last 7 days)
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            
+
             const recentIntakes = allRecords.filter(record => {
                 if (record.intakeDate) {
                     const intakeDate = new Date(record.intakeDate);
@@ -2633,29 +2702,29 @@
                 }
                 return false;
             }).length;
-            
+
             document.getElementById('statRecent').textContent = recentIntakes;
-            
+
             // Total photos
             const totalPhotos = allRecords.reduce((sum, record) => {
                 return sum + (parseInt(record.photoCount) || 0);
             }, 0);
-            
+
             document.getElementById('statTotalPhotos').textContent = totalPhotos;
         }
-        
+
         function displayRecords(records) {
             const container = document.getElementById('recordsContainer');
             const totalsDiv = document.getElementById('recordsTotals');
             const displayedCountSpan = document.getElementById('displayedCount');
             const totalCountSpan = document.getElementById('totalCount');
-            
+
             if (records.length === 0) {
                 container.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No matching records found.</p>';
                 totalsDiv.style.display = 'none';
                 return;
             }
-            
+
             // Update totals display
             displayedCountSpan.textContent = records.length;
             if (records.length < allRecords.length) {
@@ -2664,7 +2733,7 @@
                 totalCountSpan.textContent = '(total)';
             }
             totalsDiv.style.display = 'block';
-            
+
             // Function to get sort indicator
             const getSortIndicator = (column) => {
                 if (currentSortColumn === column) {
@@ -2672,7 +2741,7 @@
                 }
                 return '';
             };
-            
+
             const table = `
                 <table class="records-table">
                     <thead>
@@ -2709,10 +2778,10 @@
                     </tbody>
                 </table>
             `;
-            
+
             container.innerHTML = table;
         }
-        
+
         function sortRecords(column) {
             // Toggle direction if clicking the same column
             if (currentSortColumn === column) {
@@ -2721,13 +2790,13 @@
                 currentSortColumn = column;
                 currentSortDirection = 'asc';
             }
-            
+
             // Get currently displayed records (respecting search filter)
             const searchTerm = document.getElementById('searchRecords').value.toLowerCase();
             let recordsToSort = allRecords;
-            
+
             if (searchTerm) {
-                recordsToSort = allRecords.filter(record => 
+                recordsToSort = allRecords.filter(record =>
                     record.name.toLowerCase().includes(searchTerm) ||
                     record.species.toLowerCase().includes(searchTerm) ||
                     record.animalId.toLowerCase().includes(searchTerm) ||
@@ -2735,12 +2804,12 @@
                     record.buildingId.toLowerCase().includes(searchTerm)
                 );
             }
-            
+
             // Sort the records
             const sorted = [...recordsToSort].sort((a, b) => {
                 let aVal = a[column] || '';
                 let bVal = b[column] || '';
-                
+
                 // Handle numeric columns
                 if (column === 'photoCount') {
                     aVal = parseInt(aVal) || 0;
@@ -2756,32 +2825,32 @@
                     aVal = aVal.toString().toLowerCase();
                     bVal = bVal.toString().toLowerCase();
                 }
-                
+
                 if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
                 if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
                 return 0;
             });
-            
+
             displayRecords(sorted);
         }
-        
+
         function filterRecords() {
             const searchTerm = document.getElementById('searchRecords').value.toLowerCase();
-            
-            const filtered = allRecords.filter(record => 
+
+            const filtered = allRecords.filter(record =>
                 record.name.toLowerCase().includes(searchTerm) ||
                 record.species.toLowerCase().includes(searchTerm) ||
                 record.animalId.toLowerCase().includes(searchTerm) ||
                 record.breed.toLowerCase().includes(searchTerm) ||
                 record.buildingId.toLowerCase().includes(searchTerm)
             );
-            
+
             // Apply current sort if one is active
             if (currentSortColumn) {
                 const sorted = [...filtered].sort((a, b) => {
                     let aVal = a[currentSortColumn] || '';
                     let bVal = b[currentSortColumn] || '';
-                    
+
                     if (currentSortColumn === 'photoCount') {
                         aVal = parseInt(aVal) || 0;
                         bVal = parseInt(bVal) || 0;
@@ -2792,7 +2861,7 @@
                         aVal = aVal.toString().toLowerCase();
                         bVal = bVal.toString().toLowerCase();
                     }
-                    
+
                     if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
                     if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
                     return 0;
@@ -2802,15 +2871,15 @@
                 displayRecords(filtered);
             }
         }
-        
+
         async function printAllRecords() {
             // Get the currently displayed records (respecting search and sort)
             const searchTerm = document.getElementById('searchRecords').value.toLowerCase();
             let recordsToPrint = allRecords;
-            
+
             // Apply search filter if active
             if (searchTerm) {
-                recordsToPrint = allRecords.filter(record => 
+                recordsToPrint = allRecords.filter(record =>
                     record.name.toLowerCase().includes(searchTerm) ||
                     record.species.toLowerCase().includes(searchTerm) ||
                     record.animalId.toLowerCase().includes(searchTerm) ||
@@ -2818,13 +2887,13 @@
                     record.buildingId.toLowerCase().includes(searchTerm)
                 );
             }
-            
+
             // Apply current sort if active
             if (currentSortColumn) {
                 recordsToPrint = [...recordsToPrint].sort((a, b) => {
                     let aVal = a[currentSortColumn] || '';
                     let bVal = b[currentSortColumn] || '';
-                    
+
                     if (currentSortColumn === 'photoCount') {
                         aVal = parseInt(aVal) || 0;
                         bVal = parseInt(bVal) || 0;
@@ -2835,24 +2904,24 @@
                         aVal = aVal.toString().toLowerCase();
                         bVal = bVal.toString().toLowerCase();
                     }
-                    
+
                     if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
                     if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
                     return 0;
                 });
             }
-            
+
             if (recordsToPrint.length === 0) {
                 alert('No records to print. Please load records first.');
                 return;
             }
-            
+
             // Count total photos
             let totalPhotos = 0;
             recordsToPrint.forEach(record => {
                 totalPhotos += parseInt(record.photoCount) || 0;
             });
-            
+
             // Warn if large batch
             if (totalPhotos > 50) {
                 const proceed = confirm(
@@ -2866,13 +2935,13 @@
                 );
                 if (!proceed) return;
             }
-            
+
             const printContainer = document.getElementById('printContainer');
             printContainer.style.display = 'block';
             printContainer.innerHTML = `<p style="text-align: center; padding: 2rem;">Preparing ${recordsToPrint.length} record(s) with ${totalPhotos} photo(s)...<br><small>Please wait, this may take a while.</small></p>`;
-            
+
             let pagesHTML = '';
-            
+
             for (const record of recordsToPrint) {
                 // Create cover page for this animal - Animal ID as header, Name in details
                 pagesHTML += `
@@ -2956,14 +3025,14 @@
                         ` : ''}
                     </div>
                 `;
-                
+
                 // Add photo pages if there are photos
                 if (record.photoLinks && record.photoLinks.trim()) {
                     const photoUrls = record.photoLinks.split('|||').filter(url => url);
-                    
+
                     for (let i = 0; i < photoUrls.length; i++) {
                         let photoUrl = photoUrls[i];
-                        
+
                         // Handle Dropbox paths - fetch temporary link
                         if (photoUrl.startsWith('DROPBOX:')) {
                             const dropboxPath = photoUrl.replace('DROPBOX:', '');
@@ -2978,7 +3047,7 @@
                                         path: dropboxPath
                                     })
                                 });
-                                
+
                                 if (tempLinkResponse.ok) {
                                     const tempLinkData = await tempLinkResponse.json();
                                     photoUrl = tempLinkData.link;
@@ -2993,14 +3062,14 @@
                             photoUrl = photoUrl.replace('?dl=0', '');
                             photoUrl = photoUrl.replace('?dl=1', '');
                         }
-                        
+
                         // Convert OneDrive share links
                         if (photoUrl.includes('1drv.ms') || photoUrl.includes('onedrive.live.com')) {
                             if (photoUrl.includes('?')) {
                                 photoUrl = photoUrl + '&download=1';
                             }
                         }
-                        
+
                         pagesHTML += `
                             <div class="print-page print-photo-page">
                                 <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}" data-photo-index="${i}">
@@ -3021,13 +3090,13 @@
                     `;
                 }
             }
-            
+
             printContainer.innerHTML = pagesHTML;
-            
+
             // Wait for ALL images to fully load before printing
             const images = printContainer.querySelectorAll('img');
             const totalImages = images.length;
-            
+
             if (totalImages === 0) {
                 // No images to load, print immediately
                 window.print();
@@ -3037,7 +3106,7 @@
                 }, 1000);
                 return;
             }
-            
+
             // Show progress indicator
             const progressDiv = document.createElement('div');
             progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; text-align: center;';
@@ -3050,7 +3119,7 @@
                 <p style="margin: 1rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">Please wait... This may take a while for many photos.</p>
             `;
             document.body.appendChild(progressDiv);
-            
+
             let loadedCount = 0;
             const updateProgress = () => {
                 loadedCount++;
@@ -3058,7 +3127,7 @@
                 const progressBar = document.getElementById('printProgressBar');
                 if (progressText) progressText.textContent = loadedCount;
                 if (progressBar) progressBar.style.width = `${(loadedCount / totalImages) * 100}%`;
-                
+
                 if (loadedCount === totalImages) {
                     // All images loaded - wait a bit more then print
                     setTimeout(() => {
@@ -3071,7 +3140,7 @@
                     }, 500);
                 }
             };
-            
+
             // Set up load handlers for each image
             const loadPromises = [];
             images.forEach(img => {
@@ -3090,7 +3159,7 @@
                             updateProgress(); // Count failed images too
                             resolve(); // Don't reject, just continue
                         };
-                        
+
                         // Timeout after 30 seconds per image
                         setTimeout(() => {
                             if (!img.complete) {
@@ -3103,7 +3172,7 @@
                 });
                 loadPromises.push(promise);
             });
-            
+
             // Fallback: If something goes wrong, show print after 2 minutes
             setTimeout(() => {
                 if (document.body.contains(progressDiv)) {
@@ -3117,16 +3186,16 @@
                 }
             }, 120000); // 2 minute timeout
         }
-        
+
         async function editRecord(rowIndex) {
             const record = allRecords.find(r => r.rowIndex === rowIndex);
             if (!record) return;
-            
+
             currentEditRow = rowIndex;
-            
+
             // Switch to form section and populate fields
             showForm();
-            
+
             // Populate form fields
             document.getElementById('animalName').value = record.name;
             document.getElementById('species').value = record.species;
@@ -3142,44 +3211,44 @@
             document.getElementById('housingDescription').value = record.housingDescription || '';
             document.getElementById('healthNotes').value = record.healthNotes;
             document.getElementById('behaviorNotes').value = record.behaviorNotes;
-            
+
             // Show sync photos button (only shows when editing and cloud storage is connected)
             if (config.dropbox.connected || config.onedrive.connected || config.drive.connected) {
                 document.getElementById('syncPhotosBtn').style.display = 'inline-block';
             }
-            
+
             // Load and display existing photos
             await loadExistingPhotos(record);
-            
+
             // Change submit button to "Update"
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.innerHTML = '<span>💾 Update Animal Record</span>';
-            
+
             // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
-        
+
         async function loadExistingPhotos(record) {
             const photoPreview = document.getElementById('photoPreview');
-            
+
             if (!record.photoLinks || !record.photoLinks.trim()) {
                 photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">No photos for this animal yet.</p>';
                 return;
             }
-            
+
             const photoUrls = record.photoLinks.split('|||').filter(url => url);
-            
+
             if (photoUrls.length === 0) {
                 photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">No photos for this animal yet.</p>';
                 return;
             }
-            
+
             photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">Loading existing photos...</p>';
-            
+
             // Store original photo links for deletion tracking
             window.existingPhotoLinks = photoUrls.slice(); // Copy array
             window.deletedPhotoIndices = new Set(); // Track which photos to delete
-            
+
             // Fetch actual URLs for cloud storage paths
             const displayUrls = [];
             for (let photoUrl of photoUrls) {
@@ -3196,7 +3265,7 @@
                                 path: dropboxPath
                             })
                         });
-                        
+
                         if (tempLinkResponse.ok) {
                             const tempLinkData = await tempLinkResponse.json();
                             displayUrls.push(tempLinkData.link);
@@ -3218,7 +3287,7 @@
                                 }
                             }
                         );
-                        
+
                         if (fileResponse.ok) {
                             const fileData = await fileResponse.json();
                             displayUrls.push(fileData['@microsoft.graph.downloadUrl']);
@@ -3241,7 +3310,7 @@
                                 }
                             }
                         );
-                        
+
                         if (fileResponse.ok) {
                             const fileData = await fileResponse.json();
                             // Use thumbnail for display
@@ -3264,10 +3333,10 @@
                     displayUrls.push(photoUrl);
                 }
             }
-            
+
             // Display thumbnails with delete buttons
-            let photosHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">';
-            
+            let photosHTML = '';
+
             displayUrls.forEach((url, index) => {
                 if (url) {
                     photosHTML += `
@@ -3305,13 +3374,12 @@
                     `;
                 }
             });
-            
-            photosHTML += '</div>';
-            photosHTML += '<p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; text-align: center;">Click photos to view larger. Click × to delete. Add more photos using the buttons above.</p>';
-            
+
+            photosHTML += '<p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; text-align: center; grid-column: 1 / -1;">Click photos to view larger. Click × to delete. Add more photos using the buttons above.</p>';
+
             photoPreview.innerHTML = photosHTML;
         }
-        
+
         function deleteExistingPhoto(index) {
             if (confirm('Delete this photo? This will remove it from cloud storage and cannot be undone.')) {
                 window.deletedPhotoIndices.add(index);
@@ -3327,7 +3395,7 @@
                 }
             }
         }
-        
+
         async function deletePhotoFromCloud(photoPath) {
             // Determine which cloud provider and delete accordingly
             if (photoPath.startsWith('DROPBOX:')) {
@@ -3381,17 +3449,17 @@
                 }
             }
         }
-        
+
         function viewPhotoLarge(url) {
             // Create a modal to view the photo larger
             const modal = document.createElement('div');
             modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 10000; cursor: pointer;';
             modal.onclick = () => modal.remove();
-            
+
             const img = document.createElement('img');
             img.src = url;
             img.style.cssText = 'max-width: 90%; max-height: 90%; object-fit: contain;';
-            
+
             modal.appendChild(img);
             document.body.appendChild(modal);
         }
@@ -3402,7 +3470,7 @@
             // Add new files to existing photos instead of replacing
             selectedPhotos.push(...files);
             updatePhotoPreview();
-            
+
             // Clear the file input so same file can be selected again
             event.target.value = '';
         }
@@ -3415,15 +3483,15 @@
         // Form submission
         document.getElementById('animalForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<span class="loading"></span> <span>Saving...</span>';
-            
+
             try {
                 // Get user-entered Animal ID for folder structure
                 const userAnimalId = document.getElementById('animalId').value;
-                
+
                 // Upload photos to Dropbox, OneDrive, or Google Drive using user's Animal ID
                 let photoLinks = [];
                 if (selectedPhotos.length > 0) {
@@ -3435,14 +3503,14 @@
                         photoLinks = await uploadPhotosToGoogleDrive(userAnimalId, selectedPhotos);
                     }
                 }
-                
+
                 if (currentEditRow !== null) {
                     // UPDATE existing record
                     const record = allRecords.find(r => r.rowIndex === currentEditRow);
-                    
+
                     // Handle photo deletions
                     let existingPhotoLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
-                    
+
                     // Delete photos from cloud storage
                     if (window.deletedPhotoIndices && window.deletedPhotoIndices.size > 0) {
                         const deletionPromises = [];
@@ -3451,7 +3519,7 @@
                                 deletionPromises.push(deletePhotoFromCloud(existingPhotoLinks[index]));
                             }
                         });
-                        
+
                         // Wait for all deletions to complete
                         if (deletionPromises.length > 0) {
                             try {
@@ -3462,14 +3530,14 @@
                                 // Continue anyway - we'll still remove from spreadsheet
                             }
                         }
-                        
+
                         // Remove deleted photos from list
                         existingPhotoLinks = existingPhotoLinks.filter((link, index) => !window.deletedPhotoIndices.has(index));
                     }
-                    
+
                     // Merge new photos with remaining existing ones
                     const allPhotoLinks = [...existingPhotoLinks, ...photoLinks];
-                    
+
                     const rowData = [
                         record.timestamp, // Keep original timestamp
                         record.internalId, // Keep original internal ID
@@ -3490,19 +3558,19 @@
                         allPhotoLinks.join('|||'),
                         allPhotoLinks.length
                     ];
-                    
+
                     await updateGoogleSheetsRow(currentEditRow, rowData);
-                    
+
                     // Reset edit mode and deletion tracking
                     currentEditRow = null;
                     window.deletedPhotoIndices = new Set();
                     submitBtn.innerHTML = '<span>💾 Save Animal Record</span>';
-                    
+
                 } else {
                     // CREATE new record
                     const internalId = 'A' + Date.now();
                     const timestamp = new Date().toISOString();
-                    
+
                     const rowData = [
                         timestamp,
                         internalId,
@@ -3523,19 +3591,19 @@
                         photoLinks.join('|||'),
                         photoLinks.length
                     ];
-                    
+
                     await appendToGoogleSheets(rowData);
                 }
-                
+
                 // Show success message
                 document.getElementById('successMessage').classList.remove('hidden');
                 setTimeout(() => {
                     document.getElementById('successMessage').classList.add('hidden');
                 }, 5000);
-                
+
                 // Reset form
                 resetForm();
-                
+
             } catch (error) {
                 alert(`Error saving record: ${error.message}`);
             } finally {
@@ -3546,21 +3614,21 @@
 
         async function uploadPhotosToDropbox(animalId, photos) {
             const links = [];
-            
+
             // Build path: user's chosen folder + /AnimalOps/ + animalId
             // This ensures all users see photos in the same location regardless of their chosen base folder
             const baseFolder = config.dropbox.folder; // User's chosen folder (e.g., /MyFolder)
             const animalOpsFolder = `${baseFolder}/AnimalOps`; // Auto-created subfolder
             const animalFolder = `${animalOpsFolder}/${animalId}`; // Animal-specific folder
-            
+
             for (let i = 0; i < photos.length; i++) {
                 const file = photos[i];
                 const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
                 const fullPath = `${animalFolder}/${fileName}`; // Full absolute path
-                
+
                 // Read file as array buffer
                 const arrayBuffer = await file.arrayBuffer();
-                
+
                 // Upload to Dropbox
                 const uploadResponse = await fetch('https://content.dropboxapi.com/2/files/upload', {
                     method: 'POST',
@@ -3575,35 +3643,35 @@
                     },
                     body: arrayBuffer
                 });
-                
+
                 if (!uploadResponse.ok) {
                     throw new Error(`Failed to upload photo ${i + 1}`);
                 }
-                
+
                 const uploadData = await uploadResponse.json();
-                
+
                 // Store FULL ABSOLUTE PATH so all users can access it
                 // Format: DROPBOX:/full/path/to/file.jpg
                 // This ensures everyone sees the same photos regardless of their base folder choice
                 links.push(`DROPBOX:${uploadData.path_display}`);
             }
-            
+
             return links;
         }
 
         async function uploadPhotosToOneDrive(animalId, photos) {
             const links = [];
-            
+
             // Build path: user's chosen folder + /AnimalOps/ + animalId
             const baseFolder = config.onedrive.folder.replace(/^\//, ''); // Remove leading slash
             const animalOpsFolder = baseFolder ? `${baseFolder}/AnimalOps` : 'AnimalOps';
             const animalFolder = `${animalOpsFolder}/${animalId}`;
-            
+
             for (let i = 0; i < photos.length; i++) {
                 const file = photos[i];
                 const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
                 const fullPath = `${animalFolder}/${fileName}`;
-                
+
                 // Upload file (OneDrive auto-creates folders)
                 const uploadResponse = await fetch(
                     `https://graph.microsoft.com/v1.0/me/drive/root:/${fullPath}:/content`,
@@ -3616,24 +3684,24 @@
                         body: file
                     }
                 );
-                
+
                 if (!uploadResponse.ok) {
                     throw new Error(`Failed to upload photo ${i + 1} to OneDrive`);
                 }
-                
+
                 const uploadData = await uploadResponse.json();
-                
+
                 // Store FULL ABSOLUTE PATH
                 // Format: ONEDRIVE:/full/path/to/file.jpg
                 links.push(`ONEDRIVE:/${fullPath}`);
             }
-            
+
             return links;
         }
 
         async function uploadPhotosToGoogleDrive(animalId, photos) {
             const links = [];
-            
+
             // Step 1: Ensure AnimalOps folder exists in user's chosen base folder
             let animalOpsFolderId;
             try {
@@ -3645,9 +3713,9 @@
                         }
                     }
                 );
-                
+
                 const animalOpsData = await searchAnimalOpsResponse.json();
-                
+
                 if (animalOpsData.files && animalOpsData.files.length > 0) {
                     animalOpsFolderId = animalOpsData.files[0].id;
                 } else {
@@ -3664,14 +3732,14 @@
                             parents: [config.drive.folderId]
                         })
                     });
-                    
+
                     const animalOpsFolder = await createAnimalOpsResponse.json();
                     animalOpsFolderId = animalOpsFolder.id;
                 }
             } catch (error) {
                 throw new Error('Failed to create AnimalOps folder');
             }
-            
+
             // Step 2: Create animal-specific folder inside AnimalOps
             let animalFolderId;
             try {
@@ -3683,9 +3751,9 @@
                         }
                     }
                 );
-                
+
                 const searchData = await searchResponse.json();
-                
+
                 if (searchData.files && searchData.files.length > 0) {
                     animalFolderId = searchData.files[0].id;
                 } else {
@@ -3702,30 +3770,30 @@
                             parents: [animalOpsFolderId]
                         })
                     });
-                    
+
                     const folderData = await createFolderResponse.json();
                     animalFolderId = folderData.id;
                 }
             } catch (error) {
                 throw new Error(`Failed to create folder for animal ${animalId}`);
             }
-            
+
             // Step 3: Upload each photo
             for (let i = 0; i < photos.length; i++) {
                 const file = photos[i];
                 const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
-                
+
                 // Create metadata
                 const metadata = {
                     name: fileName,
                     parents: [animalFolderId]
                 };
-                
+
                 // Create multipart upload
                 const boundary = '-------314159265358979323846';
                 const delimiter = "\r\n--" + boundary + "\r\n";
                 const closeDelim = "\r\n--" + boundary + "--";
-                
+
                 const reader = new FileReader();
                 const base64Data = await new Promise((resolve) => {
                     reader.onloadend = () => {
@@ -3734,7 +3802,7 @@
                     };
                     reader.readAsDataURL(file);
                 });
-                
+
                 const multipartRequestBody =
                     delimiter +
                     'Content-Type: application/json\r\n\r\n' +
@@ -3745,7 +3813,7 @@
                     '\r\n' +
                     base64Data +
                     closeDelim;
-                
+
                 const uploadResponse = await fetch(
                     'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink,webContentLink',
                     {
@@ -3757,13 +3825,13 @@
                         body: multipartRequestBody
                     }
                 );
-                
+
                 if (!uploadResponse.ok) {
                     throw new Error(`Failed to upload photo ${i + 1} to Google Drive`);
                 }
-                
+
                 const uploadData = await uploadResponse.json();
-                
+
                 // Make file publicly viewable
                 try {
                     await fetch(`https://www.googleapis.com/drive/v3/files/${uploadData.id}/permissions`, {
@@ -3780,13 +3848,13 @@
                 } catch {
                     // Permission setting failed, but we still have the file
                 }
-                
+
                 // Store Google Drive file ID
                 // Format: GDRIVE:fileId
                 // This allows any user with access to retrieve the file
                 links.push(`GDRIVE:${uploadData.id}`);
             }
-            
+
             return links;
         }
 
@@ -3804,7 +3872,7 @@
                     })
                 }
             );
-            
+
             if (!response.ok) {
                 // Check if token expired
                 const handled = await handleGoogleSheetsError(null, response);
@@ -3815,7 +3883,7 @@
                 throw new Error(error.error.message);
             }
         }
-        
+
         async function updateGoogleSheetsRow(rowIndex, rowData) {
             const response = await fetch(
                 `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A${rowIndex}:R${rowIndex}?valueInputOption=RAW`,
@@ -3830,7 +3898,7 @@
                     })
                 }
             );
-            
+
             if (!response.ok) {
                 // Check if token expired
                 const handled = await handleGoogleSheetsError(null, response);
@@ -3844,31 +3912,31 @@
 
         // Camera functionality
         let cameraStream = null;
-        
+
         async function openCamera() {
             const modal = document.getElementById('cameraModal');
             const video = document.getElementById('cameraVideo');
-            
+
             try {
                 // Request camera access with preference for back camera on mobile
-                cameraStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { 
+                cameraStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
                         facingMode: 'environment', // Prefer back camera
                         width: { ideal: 1920 },
                         height: { ideal: 1080 }
-                    } 
+                    }
                 });
-                
+
                 video.srcObject = cameraStream;
                 modal.style.display = 'flex';
             } catch (error) {
                 // If back camera fails, try front camera
                 try {
-                    cameraStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { 
+                    cameraStream = await navigator.mediaDevices.getUserMedia({
+                        video: {
                             width: { ideal: 1920 },
                             height: { ideal: 1080 }
-                        } 
+                        }
                     });
                     video.srcObject = cameraStream;
                     modal.style.display = 'flex';
@@ -3877,53 +3945,53 @@
                 }
             }
         }
-        
+
         function closeCamera() {
             const modal = document.getElementById('cameraModal');
             const video = document.getElementById('cameraVideo');
-            
+
             if (cameraStream) {
                 cameraStream.getTracks().forEach(track => track.stop());
                 cameraStream = null;
             }
-            
+
             video.srcObject = null;
             modal.style.display = 'none';
         }
-        
+
         function capturePhoto() {
             const video = document.getElementById('cameraVideo');
             const canvas = document.getElementById('cameraCanvas');
             const context = canvas.getContext('2d');
-            
+
             // Set canvas size to video size
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            
+
             // Draw video frame to canvas
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
+
             // Convert canvas to blob
             canvas.toBlob((blob) => {
                 // Create a file from the blob
                 const timestamp = Date.now();
                 const file = new File([blob], `camera_photo_${timestamp}.jpg`, { type: 'image/jpeg' });
-                
+
                 // Add to selected photos
                 selectedPhotos.push(file);
-                
+
                 // Update preview
                 updatePhotoPreview();
-                
+
                 // Close camera
                 closeCamera();
             }, 'image/jpeg', 0.9);
         }
-        
+
         function updatePhotoPreview() {
             const preview = document.getElementById('photoPreview');
             preview.innerHTML = '';
-            
+
             selectedPhotos.forEach((file, index) => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
@@ -3938,36 +4006,36 @@
                 reader.readAsDataURL(file);
             });
         }
-        
+
         function removePhoto(index) {
             selectedPhotos.splice(index, 1);
             updatePhotoPreview();
         }
-        
+
         // Photo sync functionality
         let cloudPhotosToAdd = [];
-        
+
         async function syncPhotosFromCloud() {
             if (!currentEditRow) {
                 alert('Please edit an animal record first before syncing photos.');
                 return;
             }
-            
+
             const record = allRecords.find(r => r.rowIndex === currentEditRow);
             if (!record || !record.animalId) {
                 alert('Animal ID not found. Cannot sync photos.');
                 return;
             }
-            
+
             const modal = document.getElementById('photoSyncModal');
             const content = document.getElementById('photoSyncContent');
-            
+
             modal.style.display = 'flex';
             content.innerHTML = '<p style="text-align: center; padding: 2rem;">Loading photos from cloud storage...</p>';
-            
+
             try {
                 let cloudPhotos = [];
-                
+
                 // Get photos from the connected cloud storage
                 if (config.dropbox.connected) {
                     cloudPhotos = await getDropboxPhotos(record.animalId);
@@ -3976,10 +4044,10 @@
                 } else if (config.onedrive.connected) {
                     cloudPhotos = await getOneDrivePhotos(record.animalId);
                 }
-                
+
                 // Get existing photo links from the record
                 const existingLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
-                
+
                 // Filter to only show new photos not already in the record
                 const newPhotos = cloudPhotos.filter(photo => {
                     return !existingLinks.some(link => {
@@ -3987,21 +4055,21 @@
                         return link.includes(photo.name) || link === photo.link || link.startsWith('DROPBOX:') && link.includes(photo.path);
                     });
                 });
-                
+
                 if (newPhotos.length === 0) {
                     content.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No new photos found in cloud storage. All photos are already synced!</p>';
                     return;
                 }
-                
+
                 // Display photos with checkboxes
                 cloudPhotosToAdd = newPhotos;
-                
+
                 let photosHTML = `
                     <p style="margin-bottom: 1rem;"><strong>Found ${newPhotos.length} new photo(s)</strong> in folder <code>${record.animalId}</code></p>
                     <p style="margin-bottom: 1rem; color: var(--text-light);">Select the photos you want to add to this animal's record:</p>
                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
                 `;
-                
+
                 newPhotos.forEach((photo, index) => {
                     photosHTML += `
                         <div style="text-align: center; border: 2px solid var(--border); border-radius: 8px; padding: 0.5rem;">
@@ -4010,22 +4078,22 @@
                         </div>
                     `;
                 });
-                
+
                 photosHTML += '</div>';
                 content.innerHTML = photosHTML;
-                
+
                 // Show add button
                 document.getElementById('addSelectedPhotosBtn').style.display = 'inline-block';
-                
+
             } catch (error) {
                 content.innerHTML = `<p style="text-align: center; padding: 2rem; color: var(--error);">Error loading photos: ${error.message}</p>`;
             }
         }
-        
+
         async function getDropboxPhotos(animalId) {
             // Use new folder structure: baseFolder/AnimalOps/animalId
             const folder = `${config.dropbox.folder}/AnimalOps/${animalId}`;
-            
+
             try {
                 const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
                     method: 'POST',
@@ -4037,13 +4105,13 @@
                         path: folder
                     })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error('Folder not found or empty');
                 }
-                
+
                 const data = await response.json();
-                
+
                 // Filter for image files only
                 return data.entries
                     .filter(entry => entry['.tag'] === 'file' && /\.(jpg|jpeg|png|gif|webp)$/i.test(entry.name))
@@ -4052,17 +4120,17 @@
                         path: entry.path_display,
                         link: `DROPBOX:${entry.path_display}` // Store as DROPBOX: path for later fetching
                     }));
-                    
+
             } catch (error) {
                 throw new Error(`Could not access Dropbox folder: ${error.message}`);
             }
         }
-        
+
         async function getOneDrivePhotos(animalId) {
             // Use new folder structure: baseFolder/AnimalOps/animalId
             const baseFolder = config.onedrive.folder.replace(/^\//, '');
             const folder = baseFolder ? `${baseFolder}/AnimalOps/${animalId}` : `AnimalOps/${animalId}`;
-            
+
             try {
                 const response = await fetch(
                     `https://graph.microsoft.com/v1.0/me/drive/root:/${folder}:/children`,
@@ -4072,13 +4140,13 @@
                         }
                     }
                 );
-                
+
                 if (!response.ok) {
                     throw new Error('Folder not found or empty');
                 }
-                
+
                 const data = await response.json();
-                
+
                 // Filter for image files only
                 return data.value
                     .filter(item => item.file && item.file.mimeType && item.file.mimeType.startsWith('image/'))
@@ -4087,12 +4155,12 @@
                         path: `/${folder}/${item.name}`,
                         link: `ONEDRIVE:/${folder}/${item.name}`
                     }));
-                    
+
             } catch (error) {
                 throw new Error(`Could not access OneDrive folder: ${error.message}`);
             }
         }
-        
+
         async function getGoogleDrivePhotos(animalId) {
             // Find AnimalOps folder first
             try {
@@ -4104,15 +4172,15 @@
                         }
                     }
                 );
-                
+
                 const animalOpsData = await searchAnimalOpsResponse.json();
-                
+
                 if (!animalOpsData.files || animalOpsData.files.length === 0) {
                     throw new Error('AnimalOps folder not found');
                 }
-                
+
                 const animalOpsFolderId = animalOpsData.files[0].id;
-                
+
                 // Now search for the animal folder inside AnimalOps
                 const searchResponse = await fetch(
                     `https://www.googleapis.com/drive/v3/files?q=name='${animalId}' and '${animalOpsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
@@ -4122,15 +4190,15 @@
                         }
                     }
                 );
-                
+
                 const searchData = await searchResponse.json();
-                
+
                 if (!searchData.files || searchData.files.length === 0) {
                     throw new Error('Animal folder not found');
                 }
-                
+
                 const folderId = searchData.files[0].id;
-                
+
                 // List files in the folder
                 const filesResponse = await fetch(
                     `https://www.googleapis.com/drive/v3/files?q='${folderId}' in parents and mimeType contains 'image/' and trashed=false&fields=files(id,name,webContentLink,webViewLink)`,
@@ -4140,30 +4208,30 @@
                         }
                     }
                 );
-                
+
                 const filesData = await filesResponse.json();
-                
+
                 return filesData.files.map(file => ({
                     name: file.name,
                     path: file.id,
                     link: `GDRIVE:${file.id}` // Store as GDRIVE:fileId
                 }));
-                
+
             } catch (error) {
                 throw new Error(`Could not access Google Drive folder: ${error.message}`);
             }
         }
-        
+
         function closePhotoSync() {
             document.getElementById('photoSyncModal').style.display = 'none';
             document.getElementById('addSelectedPhotosBtn').style.display = 'none';
             cloudPhotosToAdd = [];
         }
-        
+
         function addSelectedPhotos() {
             const record = allRecords.find(r => r.rowIndex === currentEditRow);
             if (!record) return;
-            
+
             // Get selected photos
             const selectedCloudPhotos = [];
             cloudPhotosToAdd.forEach((photo, index) => {
@@ -4172,19 +4240,19 @@
                     selectedCloudPhotos.push(photo.link);
                 }
             });
-            
+
             if (selectedCloudPhotos.length === 0) {
                 alert('Please select at least one photo to add.');
                 return;
             }
-            
+
             // Get existing photo links
             const existingLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
-            
+
             // Combine existing and new
             const allLinks = [...existingLinks, ...selectedCloudPhotos];
             const newPhotoCount = allLinks.length;
-            
+
             // Update the record in Google Sheets with ALL 18 columns
             const rowData = [
                 record.timestamp,
@@ -4206,7 +4274,7 @@
                 allLinks.join('|||'),
                 newPhotoCount
             ];
-            
+
             updateGoogleSheetsRow(currentEditRow, rowData)
                 .then(() => {
                     alert(`Successfully added ${selectedCloudPhotos.length} photo(s)!`);
@@ -4234,7 +4302,7 @@
         function showHelp(section) {
             const modal = document.getElementById('helpModal');
             const content = document.getElementById('helpContent');
-            
+
             if (section === 'sheets') {
                 content.innerHTML = `
                     <div class="help-section">
@@ -4493,7 +4561,7 @@
                     </div>
                 `;
             }
-            
+
             modal.classList.add('active');
         }
 
@@ -4509,4 +4577,5 @@
         });
     </script>
 </body>
+
 </html>
