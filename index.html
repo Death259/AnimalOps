@@ -2924,7 +2924,7 @@
                 
                 // Add photo pages if there are photos
                 if (record.photoLinks && record.photoLinks.trim()) {
-                    const photoUrls = record.photoLinks.split(',').map(url => url.trim()).filter(url => url);
+                    const photoUrls = record.photoLinks.split('|||').filter(url => url);
                     
                     for (let i = 0; i < photoUrls.length; i++) {
                         let photoUrl = photoUrls[i];
@@ -3048,7 +3048,7 @@
                 return;
             }
             
-            const photoUrls = record.photoLinks.split(',').map(url => url.trim()).filter(url => url);
+            const photoUrls = record.photoLinks.split('|||').filter(url => url);
             
             if (photoUrls.length === 0) {
                 photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">No photos for this animal yet.</p>';
@@ -3268,7 +3268,7 @@
                     const record = allRecords.find(r => r.rowIndex === currentEditRow);
                     
                     // Handle photo deletions
-                    let existingPhotoLinks = record.photoLinks ? record.photoLinks.split(', ').filter(l => l) : [];
+                    let existingPhotoLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
                     
                     // Remove deleted photos
                     if (window.deletedPhotoIndices && window.deletedPhotoIndices.size > 0) {
@@ -3295,7 +3295,7 @@
                         document.getElementById('housingDescription').value,
                         document.getElementById('healthNotes').value,
                         document.getElementById('behaviorNotes').value,
-                        allPhotoLinks.join(', '),
+                        allPhotoLinks.join('|||'),
                         allPhotoLinks.length
                     ];
                     
@@ -3328,7 +3328,7 @@
                         document.getElementById('housingDescription').value,
                         document.getElementById('healthNotes').value,
                         document.getElementById('behaviorNotes').value,
-                        photoLinks.join(', '),
+                        photoLinks.join('|||'),
                         photoLinks.length
                     ];
                     
@@ -3786,7 +3786,7 @@
                 }
                 
                 // Get existing photo links from the record
-                const existingLinks = record.photoLinks ? record.photoLinks.split(',').map(l => l.trim()).filter(l => l) : [];
+                const existingLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
                 
                 // Filter to only show new photos not already in the record
                 const newPhotos = cloudPhotos.filter(photo => {
@@ -3987,7 +3987,7 @@
             }
             
             // Get existing photo links
-            const existingLinks = record.photoLinks ? record.photoLinks.split(',').map(l => l.trim()).filter(l => l) : [];
+            const existingLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
             
             // Combine existing and new
             const allLinks = [...existingLinks, ...selectedCloudPhotos];
@@ -4011,7 +4011,7 @@
                 record.housingDescription || '',      // Column 14
                 record.healthNotes,
                 record.behaviorNotes,
-                allLinks.join(', '),
+                allLinks.join('|||'),
                 newPhotoCount
             ];
             
@@ -4019,7 +4019,7 @@
                 .then(() => {
                     alert(`Successfully added ${selectedCloudPhotos.length} photo(s)!`);
                     // Update local record
-                    record.photoLinks = allLinks.join(', ');
+                    record.photoLinks = allLinks.join('|||');
                     record.photoCount = newPhotoCount;
                     closePhotoSync();
                 })
