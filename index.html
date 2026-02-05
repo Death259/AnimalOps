@@ -1230,6 +1230,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
                 <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin: 0;">View & Edit Records</h2>
                 <div style="display: flex; gap: 1rem;">
+                    <button class="btn btn-primary" onclick="resetForm(); showForm();">
+                        <span>➕ Add New Animal</span>
+                    </button>
                     <button class="btn btn-outline" onclick="printAllRecords()">
                         <span>🖨️ Print All</span>
                     </button>
@@ -1296,8 +1299,8 @@
             </div>
             
             <div style="margin-top: 1.5rem; text-align: center;">
-                <button class="btn btn-outline" onclick="showForm()">
-                    <span>← Back to Add Animal</span>
+                <button class="btn btn-outline" onclick="resetForm(); showForm();">
+                    <span>➕ Add New Animal</span>
                 </button>
             </div>
         </div>
@@ -2474,7 +2477,7 @@
             
             if (sheetsReady && storageReady) {
                 document.getElementById('setupSection').classList.remove('active');
-                document.getElementById('formSection').classList.add('active');
+                showRecords();
             }
         }
 
@@ -3269,7 +3272,7 @@
                 if (url) {
                     photosHTML += `
                         <div id="existingPhoto${index}" style="position: relative; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light);">
-                            <button onclick="deleteExistingPhoto(${index}); event.stopPropagation();" 
+                            <button type="button" onclick="deleteExistingPhoto(${index}); event.stopPropagation();" 
                                     style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1.2rem; line-height: 1; z-index: 10; display: flex; align-items: center; justify-content: center;"
                                     title="Delete photo">×</button>
                             <div onclick="viewPhotoLarge('${url.replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer;">
@@ -3289,7 +3292,7 @@
                 } else {
                     photosHTML += `
                         <div id="existingPhoto${index}" style="border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light);">
-                            <button onclick="deleteExistingPhoto(${index}); event.stopPropagation();" 
+                            <button type="button" onclick="deleteExistingPhoto(${index}); event.stopPropagation();" 
                                     style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1.2rem; line-height: 1; z-index: 10; display: flex; align-items: center; justify-content: center;"
                                     title="Delete photo">×</button>
                             <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: var(--text-light);">
