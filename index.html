@@ -3993,7 +3993,7 @@
             const allLinks = [...existingLinks, ...selectedCloudPhotos];
             const newPhotoCount = allLinks.length;
             
-            // Update the record in Google Sheets
+            // Update the record in Google Sheets with ALL 18 columns
             const rowData = [
                 record.timestamp,
                 record.internalId,
@@ -4007,6 +4007,8 @@
                 record.buildingId,
                 record.color,
                 record.bodyConditionScore,
+                record.foodWaterAvailability || '',  // Column 13
+                record.housingDescription || '',      // Column 14
                 record.healthNotes,
                 record.behaviorNotes,
                 allLinks.join(', '),
