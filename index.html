@@ -3273,10 +3273,16 @@
         async function uploadPhotosToDropbox(animalId, photos) {
             const links = [];
             
+            // Build path: user's chosen folder + /AnimalOps/ + animalId
+            // This ensures all users see photos in the same location regardless of their chosen base folder
+            const baseFolder = config.dropbox.folder; // User's chosen folder (e.g., /MyFolder)
+            const animalOpsFolder = `${baseFolder}/AnimalOps`; // Auto-created subfolder
+            const animalFolder = `${animalOpsFolder}/${animalId}`; // Animal-specific folder
+            
             for (let i = 0; i < photos.length; i++) {
                 const file = photos[i];
                 const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
-                const path = `${config.dropbox.folder}/${animalId}/${fileName}`;
+                const fullPath = `${animalFolder}/${fileName}`; // Full absolute path
                 
                 // Read file as array buffer
                 const arrayBuffer = await file.arrayBuffer();
@@ -3287,7 +3293,7 @@
                     headers: {
                         'Authorization': `Bearer ${config.dropbox.token}`,
                         'Dropbox-API-Arg': JSON.stringify({
-                            path: path,
+                            path: fullPath,
                             mode: 'add',
                             autorename: true
                         }),
@@ -3302,54 +3308,10 @@
                 
                 const uploadData = await uploadResponse.json();
                 
-                // Get temporary link (valid for 4 hours)
-                // This is better for direct image display than shared links
-                try {
-                    const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${config.dropbox.token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            path: uploadData.path_display
-                        })
-                    });
-                    
-                    if (tempLinkResponse.ok) {
-                        const tempLinkData = await tempLinkResponse.json();
-                        // Store the path so we can regenerate links later
-                        links.push(`DROPBOX:${uploadData.path_display}`);
-                    } else {
-                        // Fallback to shared link
-                        const linkResponse = await fetch('https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${config.dropbox.token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                path: uploadData.path_display,
-                                settings: {
-                                    requested_visibility: 'public'
-                                }
-                            })
-                        });
-                        
-                        if (linkResponse.ok) {
-                            const linkData = await linkResponse.json();
-                            // Convert to direct download link
-                            let directLink = linkData.url.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-                            directLink = directLink.replace('?dl=0', '');
-                            links.push(directLink);
-                        } else {
-                            links.push(`DROPBOX:${uploadData.path_display}`);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Dropbox link error:', error);
-                    links.push(`DROPBOX:${uploadData.path_display}`);
-                }
+                // Store FULL ABSOLUTE PATH so all users can access it
+                // Format: DROPBOX:/full/path/to/file.jpg
+                // This ensures everyone sees the same photos regardless of their base folder choice
+                links.push(`DROPBOX:${uploadData.path_display}`);
             }
             
             return links;
@@ -3358,41 +3320,19 @@
         async function uploadPhotosToOneDrive(animalId, photos) {
             const links = [];
             
+            // Build path: user's chosen folder + /AnimalOps/ + animalId
+            const baseFolder = config.onedrive.folder.replace(/^\//, ''); // Remove leading slash
+            const animalOpsFolder = baseFolder ? `${baseFolder}/AnimalOps` : 'AnimalOps';
+            const animalFolder = `${animalOpsFolder}/${animalId}`;
+            
             for (let i = 0; i < photos.length; i++) {
                 const file = photos[i];
                 const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
+                const fullPath = `${animalFolder}/${fileName}`;
                 
-                // Create folder structure
-                const folderPath = config.onedrive.folder.replace(/^\//, '');
-                const animalFolder = folderPath ? `${folderPath}/${animalId}` : animalId;
-                
-                // Ensure folder exists
-                try {
-                    await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${animalFolder}:/children`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${config.onedrive.token}`
-                        }
-                    });
-                } catch {
-                    // Folder doesn't exist, create it
-                    await fetch(`https://graph.microsoft.com/v1.0/me/drive/root/children`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${config.onedrive.token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            name: animalFolder,
-                            folder: {}
-                        })
-                    });
-                }
-                
-                // Upload file
-                const uploadPath = `${animalFolder}/${fileName}`;
+                // Upload file (OneDrive auto-creates folders)
                 const uploadResponse = await fetch(
-                    `https://graph.microsoft.com/v1.0/me/drive/root:/${uploadPath}:/content`,
+                    `https://graph.microsoft.com/v1.0/me/drive/root:/${fullPath}:/content`,
                     {
                         method: 'PUT',
                         headers: {
@@ -3409,32 +3349,9 @@
                 
                 const uploadData = await uploadResponse.json();
                 
-                // Create sharing link
-                try {
-                    const shareResponse = await fetch(
-                        `https://graph.microsoft.com/v1.0/me/drive/items/${uploadData.id}/createLink`,
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${config.onedrive.token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                type: 'view',
-                                scope: 'anonymous'
-                            })
-                        }
-                    );
-                    
-                    if (shareResponse.ok) {
-                        const shareData = await shareResponse.json();
-                        links.push(shareData.link.webUrl);
-                    } else {
-                        links.push(uploadData.webUrl);
-                    }
-                } catch {
-                    links.push(uploadData.webUrl);
-                }
+                // Store FULL ABSOLUTE PATH
+                // Format: ONEDRIVE:/full/path/to/file.jpg
+                links.push(`ONEDRIVE:/${fullPath}`);
             }
             
             return links;
@@ -3443,12 +3360,49 @@
         async function uploadPhotosToGoogleDrive(animalId, photos) {
             const links = [];
             
-            // Create animal-specific folder
+            // Step 1: Ensure AnimalOps folder exists in user's chosen base folder
+            let animalOpsFolderId;
+            try {
+                const searchAnimalOpsResponse = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=name='AnimalOps' and '${config.drive.folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+                
+                const animalOpsData = await searchAnimalOpsResponse.json();
+                
+                if (animalOpsData.files && animalOpsData.files.length > 0) {
+                    animalOpsFolderId = animalOpsData.files[0].id;
+                } else {
+                    // Create AnimalOps folder
+                    const createAnimalOpsResponse = await fetch('https://www.googleapis.com/drive/v3/files', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: 'AnimalOps',
+                            mimeType: 'application/vnd.google-apps.folder',
+                            parents: [config.drive.folderId]
+                        })
+                    });
+                    
+                    const animalOpsFolder = await createAnimalOpsResponse.json();
+                    animalOpsFolderId = animalOpsFolder.id;
+                }
+            } catch (error) {
+                throw new Error('Failed to create AnimalOps folder');
+            }
+            
+            // Step 2: Create animal-specific folder inside AnimalOps
             let animalFolderId;
             try {
-                // Search for existing animal folder
                 const searchResponse = await fetch(
-                    `https://www.googleapis.com/drive/v3/files?q=name='${animalId}' and '${config.drive.folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    `https://www.googleapis.com/drive/v3/files?q=name='${animalId}' and '${animalOpsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
                     {
                         headers: {
                             'Authorization': `Bearer ${config.drive.token}`
@@ -3471,7 +3425,7 @@
                         body: JSON.stringify({
                             name: animalId,
                             mimeType: 'application/vnd.google-apps.folder',
-                            parents: [config.drive.folderId]
+                            parents: [animalOpsFolderId]
                         })
                     });
                     
@@ -3482,7 +3436,7 @@
                 throw new Error(`Failed to create folder for animal ${animalId}`);
             }
             
-            // Upload each photo
+            // Step 3: Upload each photo
             for (let i = 0; i < photos.length; i++) {
                 const file = photos[i];
                 const fileName = `${animalId}_photo_${i + 1}_${file.name}`;
@@ -3553,7 +3507,10 @@
                     // Permission setting failed, but we still have the file
                 }
                 
-                links.push(uploadData.webViewLink || uploadData.webContentLink);
+                // Store Google Drive file ID
+                // Format: GDRIVE:fileId
+                // This allows any user with access to retrieve the file
+                links.push(`GDRIVE:${uploadData.id}`);
             }
             
             return links;
