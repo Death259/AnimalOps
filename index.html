@@ -3057,7 +3057,11 @@
             
             photoPreview.innerHTML = '<p style="color: var(--text-light); text-align: center; padding: 1rem;">Loading existing photos...</p>';
             
-            // Fetch actual URLs for Dropbox paths
+            // Store original photo links for deletion tracking
+            window.existingPhotoLinks = photoUrls.slice(); // Copy array
+            window.deletedPhotoIndices = new Set(); // Track which photos to delete
+            
+            // Fetch actual URLs for cloud storage paths
             const displayUrls = [];
             for (let photoUrl of photoUrls) {
                 if (photoUrl.startsWith('DROPBOX:')) {
@@ -3078,10 +3082,56 @@
                             const tempLinkData = await tempLinkResponse.json();
                             displayUrls.push(tempLinkData.link);
                         } else {
-                            displayUrls.push(null); // Failed to load
+                            displayUrls.push(null);
                         }
                     } catch (error) {
                         console.error('Error fetching Dropbox temp link:', error);
+                        displayUrls.push(null);
+                    }
+                } else if (photoUrl.startsWith('ONEDRIVE:')) {
+                    const onedrivePath = photoUrl.replace('ONEDRIVE:', '');
+                    try {
+                        const fileResponse = await fetch(
+                            `https://graph.microsoft.com/v1.0/me/drive/root:${onedrivePath}`,
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${config.onedrive.token}`
+                                }
+                            }
+                        );
+                        
+                        if (fileResponse.ok) {
+                            const fileData = await fileResponse.json();
+                            displayUrls.push(fileData['@microsoft.graph.downloadUrl']);
+                        } else {
+                            displayUrls.push(null);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching OneDrive link:', error);
+                        displayUrls.push(null);
+                    }
+                } else if (photoUrl.startsWith('GDRIVE:')) {
+                    const fileId = photoUrl.replace('GDRIVE:', '');
+                    try {
+                        // Get file metadata including download link
+                        const fileResponse = await fetch(
+                            `https://www.googleapis.com/drive/v3/files/${fileId}?fields=webContentLink,thumbnailLink`,
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${config.drive.token}`
+                                }
+                            }
+                        );
+                        
+                        if (fileResponse.ok) {
+                            const fileData = await fileResponse.json();
+                            // Use thumbnail for display
+                            displayUrls.push(fileData.thumbnailLink || fileData.webContentLink);
+                        } else {
+                            displayUrls.push(null);
+                        }
+                    } catch (error) {
+                        console.error('Error fetching Google Drive link:', error);
                         displayUrls.push(null);
                     }
                 } else if (photoUrl.includes('dropbox.com')) {
@@ -3091,24 +3141,29 @@
                     convertedUrl = convertedUrl.replace('?dl=1', '');
                     displayUrls.push(convertedUrl);
                 } else {
-                    // Google Drive, OneDrive, or other URLs
+                    // Other URLs
                     displayUrls.push(photoUrl);
                 }
             }
             
-            // Display thumbnails
+            // Display thumbnails with delete buttons
             let photosHTML = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">';
             
             displayUrls.forEach((url, index) => {
                 if (url) {
                     photosHTML += `
-                        <div style="position: relative; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light); cursor: pointer;" onclick="viewPhotoLarge('${url.replace(/'/g, "\\'")}')">
-                            <img src="${url}" 
-                                 alt="Photo ${index + 1}" 
-                                 style="width: 100%; height: 150px; object-fit: cover;"
-                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div style="display: none; height: 150px; align-items: center; justify-content: center; color: var(--text-light); font-size: 0.85rem;">
-                                Failed to load
+                        <div id="existingPhoto${index}" style="position: relative; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light);">
+                            <button onclick="deleteExistingPhoto(${index}); event.stopPropagation();" 
+                                    style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1.2rem; line-height: 1; z-index: 10; display: flex; align-items: center; justify-content: center;"
+                                    title="Delete photo">×</button>
+                            <div onclick="viewPhotoLarge('${url.replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer;">
+                                <img src="${url}" 
+                                     alt="Photo ${index + 1}" 
+                                     style="width: 100%; height: 150px; object-fit: cover;"
+                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div style="display: none; height: 150px; align-items: center; justify-content: center; color: var(--text-light); font-size: 0.85rem;">
+                                    Failed to load
+                                </div>
                             </div>
                             <div style="padding: 0.5rem; text-align: center; background: white;">
                                 <small>Photo ${index + 1}</small>
@@ -3117,7 +3172,10 @@
                     `;
                 } else {
                     photosHTML += `
-                        <div style="border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light);">
+                        <div id="existingPhoto${index}" style="border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light);">
+                            <button onclick="deleteExistingPhoto(${index}); event.stopPropagation();" 
+                                    style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1.2rem; line-height: 1; z-index: 10; display: flex; align-items: center; justify-content: center;"
+                                    title="Delete photo">×</button>
                             <div style="height: 150px; display: flex; align-items: center; justify-content: center; color: var(--text-light);">
                                 Failed to load
                             </div>
@@ -3130,9 +3188,25 @@
             });
             
             photosHTML += '</div>';
-            photosHTML += '<p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; text-align: center;">Click any photo to view larger. Add more photos using the buttons above.</p>';
+            photosHTML += '<p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; text-align: center;">Click photos to view larger. Click × to delete. Add more photos using the buttons above.</p>';
             
             photoPreview.innerHTML = photosHTML;
+        }
+        
+        function deleteExistingPhoto(index) {
+            if (confirm('Delete this photo? This action cannot be undone.')) {
+                window.deletedPhotoIndices.add(index);
+                const photoDiv = document.getElementById(`existingPhoto${index}`);
+                if (photoDiv) {
+                    photoDiv.style.opacity = '0.3';
+                    photoDiv.style.pointerEvents = 'none';
+                    const deleteBtn = photoDiv.querySelector('button');
+                    if (deleteBtn) {
+                        deleteBtn.textContent = '✓';
+                        deleteBtn.style.background = 'rgba(0,150,0,0.8)';
+                    }
+                }
+            }
         }
         
         function viewPhotoLarge(url) {
@@ -3193,8 +3267,15 @@
                     // UPDATE existing record
                     const record = allRecords.find(r => r.rowIndex === currentEditRow);
                     
-                    // Merge new photos with existing ones
-                    const existingPhotoLinks = record.photoLinks ? record.photoLinks.split(', ').filter(l => l) : [];
+                    // Handle photo deletions
+                    let existingPhotoLinks = record.photoLinks ? record.photoLinks.split(', ').filter(l => l) : [];
+                    
+                    // Remove deleted photos
+                    if (window.deletedPhotoIndices && window.deletedPhotoIndices.size > 0) {
+                        existingPhotoLinks = existingPhotoLinks.filter((link, index) => !window.deletedPhotoIndices.has(index));
+                    }
+                    
+                    // Merge new photos with remaining existing ones
                     const allPhotoLinks = [...existingPhotoLinks, ...photoLinks];
                     
                     const rowData = [
@@ -3220,8 +3301,9 @@
                     
                     await updateGoogleSheetsRow(currentEditRow, rowData);
                     
-                    // Reset edit mode
+                    // Reset edit mode and deletion tracking
                     currentEditRow = null;
+                    window.deletedPhotoIndices = new Set();
                     submitBtn.innerHTML = '<span>💾 Save Animal Record</span>';
                     
                 } else {
@@ -3700,9 +3782,7 @@
                 } else if (config.drive.connected) {
                     cloudPhotos = await getGoogleDrivePhotos(record.animalId);
                 } else if (config.onedrive.connected) {
-                    alert('OneDrive photo sync is not yet implemented. Please use Dropbox or Google Drive.');
-                    closePhotoSync();
-                    return;
+                    cloudPhotos = await getOneDrivePhotos(record.animalId);
                 }
                 
                 // Get existing photo links from the record
@@ -3751,7 +3831,8 @@
         }
         
         async function getDropboxPhotos(animalId) {
-            const folder = `${config.dropbox.folder}/${animalId}`;
+            // Use new folder structure: baseFolder/AnimalOps/animalId
+            const folder = `${config.dropbox.folder}/AnimalOps/${animalId}`;
             
             try {
                 const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
@@ -3785,11 +3866,64 @@
             }
         }
         
-        async function getGoogleDrivePhotos(animalId) {
-            // Search for the animal folder
+        async function getOneDrivePhotos(animalId) {
+            // Use new folder structure: baseFolder/AnimalOps/animalId
+            const baseFolder = config.onedrive.folder.replace(/^\//, '');
+            const folder = baseFolder ? `${baseFolder}/AnimalOps/${animalId}` : `AnimalOps/${animalId}`;
+            
             try {
+                const response = await fetch(
+                    `https://graph.microsoft.com/v1.0/me/drive/root:/${folder}:/children`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.onedrive.token}`
+                        }
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error('Folder not found or empty');
+                }
+                
+                const data = await response.json();
+                
+                // Filter for image files only
+                return data.value
+                    .filter(item => item.file && item.file.mimeType && item.file.mimeType.startsWith('image/'))
+                    .map(item => ({
+                        name: item.name,
+                        path: `/${folder}/${item.name}`,
+                        link: `ONEDRIVE:/${folder}/${item.name}`
+                    }));
+                    
+            } catch (error) {
+                throw new Error(`Could not access OneDrive folder: ${error.message}`);
+            }
+        }
+        
+        async function getGoogleDrivePhotos(animalId) {
+            // Find AnimalOps folder first
+            try {
+                const searchAnimalOpsResponse = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=name='AnimalOps' and '${config.drive.folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+                
+                const animalOpsData = await searchAnimalOpsResponse.json();
+                
+                if (!animalOpsData.files || animalOpsData.files.length === 0) {
+                    throw new Error('AnimalOps folder not found');
+                }
+                
+                const animalOpsFolderId = animalOpsData.files[0].id;
+                
+                // Now search for the animal folder inside AnimalOps
                 const searchResponse = await fetch(
-                    `https://www.googleapis.com/drive/v3/files?q=name='${animalId}' and '${config.drive.folderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+                    `https://www.googleapis.com/drive/v3/files?q=name='${animalId}' and '${animalOpsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`,
                     {
                         headers: {
                             'Authorization': `Bearer ${config.drive.token}`
@@ -3800,7 +3934,7 @@
                 const searchData = await searchResponse.json();
                 
                 if (!searchData.files || searchData.files.length === 0) {
-                    throw new Error('Folder not found');
+                    throw new Error('Animal folder not found');
                 }
                 
                 const folderId = searchData.files[0].id;
@@ -3820,7 +3954,7 @@
                 return filesData.files.map(file => ({
                     name: file.name,
                     path: file.id,
-                    link: file.webContentLink || file.webViewLink
+                    link: `GDRIVE:${file.id}` // Store as GDRIVE:fileId
                 }));
                 
             } catch (error) {
