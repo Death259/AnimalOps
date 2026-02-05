@@ -3518,7 +3518,7 @@
 
         async function appendToGoogleSheets(rowData) {
             const response = await fetch(
-                `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A:P:append?valueInputOption=RAW`,
+                `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A:R:append?valueInputOption=RAW`,
                 {
                     method: 'POST',
                     headers: {
@@ -3544,7 +3544,7 @@
         
         async function updateGoogleSheetsRow(rowIndex, rowData) {
             const response = await fetch(
-                `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A${rowIndex}:P${rowIndex}?valueInputOption=RAW`,
+                `https://sheets.googleapis.com/v4/spreadsheets/${config.sheets.spreadsheetId}/values/Sheet1!A${rowIndex}:R${rowIndex}?valueInputOption=RAW`,
                 {
                     method: 'PUT',
                     headers: {
