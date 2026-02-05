@@ -3250,102 +3250,143 @@
             window.deletedPhotoIndices = new Set(); // Track which photos to delete
 
             // Fetch actual URLs for cloud storage paths
-            const displayUrls = [];
+            const displayItems = [];
             for (let photoUrl of photoUrls) {
+                let thumbUrl = null;
+                let fullUrl = null;
+
                 if (photoUrl.startsWith('DROPBOX:')) {
                     const dropboxPath = photoUrl.replace('DROPBOX:', '');
                     try {
+                        // 1. Get Full Temporary Link
                         const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
                             method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${config.dropbox.token}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({
-                                path: dropboxPath
-                            })
+                            body: JSON.stringify({ path: dropboxPath })
                         });
 
                         if (tempLinkResponse.ok) {
                             const tempLinkData = await tempLinkResponse.json();
-                            displayUrls.push(tempLinkData.link);
-                        } else {
-                            displayUrls.push(null);
+                            fullUrl = tempLinkData.link;
                         }
+
+                        // 2. Get Thumbnail (Blob)
+                        try {
+                            const thumbResponse = await fetch('https://content.dropboxapi.com/2/files/get_thumbnail', {
+                                method: 'POST',
+                                headers: {
+                                    'Authorization': `Bearer ${config.dropbox.token}`,
+                                    'Dropbox-API-Arg': JSON.stringify({
+                                        path: dropboxPath,
+                                        format: 'jpeg',
+                                        size: 'w640h480'
+                                    })
+                                }
+                            });
+
+                            if (thumbResponse.ok) {
+                                const blob = await thumbResponse.blob();
+                                thumbUrl = URL.createObjectURL(blob);
+                            }
+                        } catch (e) {
+                            console.warn('Failed to get Dropbox thumbnail:', e);
+                        }
+
+                        // Fallback
+                        if (!thumbUrl) thumbUrl = fullUrl;
+
+                        displayItems.push({ thumb: thumbUrl, full: fullUrl });
+
                     } catch (error) {
-                        console.error('Error fetching Dropbox temp link:', error);
-                        displayUrls.push(null);
+                        console.error('Error fetching Dropbox links:', error);
+                        displayItems.push({ thumb: null, full: null });
                     }
                 } else if (photoUrl.startsWith('ONEDRIVE:')) {
                     const onedrivePath = photoUrl.replace('ONEDRIVE:', '');
                     try {
-                        const fileResponse = await fetch(
+                        // 1. Get Metadata (for download URL)
+                        const metadataResponse = await fetch(
                             `https://graph.microsoft.com/v1.0/me/drive/root:${onedrivePath}`,
-                            {
-                                headers: {
-                                    'Authorization': `Bearer ${config.onedrive.token}`
-                                }
-                            }
+                            { headers: { 'Authorization': `Bearer ${config.onedrive.token}` } }
                         );
 
-                        if (fileResponse.ok) {
-                            const fileData = await fileResponse.json();
-                            displayUrls.push(fileData['@microsoft.graph.downloadUrl']);
-                        } else {
-                            displayUrls.push(null);
+                        if (metadataResponse.ok) {
+                            const fileData = await metadataResponse.json();
+                            fullUrl = fileData['@microsoft.graph.downloadUrl'];
                         }
+
+                        // 2. Get Thumbnails
+                        try {
+                            const thumbsResponse = await fetch(
+                                `https://graph.microsoft.com/v1.0/me/drive/root:${onedrivePath}:/thumbnails`,
+                                { headers: { 'Authorization': `Bearer ${config.onedrive.token}` } }
+                            );
+                            if (thumbsResponse.ok) {
+                                const thumbsData = await thumbsResponse.json();
+                                if (thumbsData.value && thumbsData.value.length > 0) {
+                                    thumbUrl = thumbsData.value[0].large?.url || thumbsData.value[0].medium?.url;
+                                }
+                            }
+                        } catch (e) { console.warn('Failed to get OneDrive thumbnail', e); }
+
+                        if (!thumbUrl) thumbUrl = fullUrl;
+                        displayItems.push({ thumb: thumbUrl, full: fullUrl });
+
                     } catch (error) {
                         console.error('Error fetching OneDrive link:', error);
-                        displayUrls.push(null);
+                        displayItems.push({ thumb: null, full: null });
                     }
                 } else if (photoUrl.startsWith('GDRIVE:')) {
                     const fileId = photoUrl.replace('GDRIVE:', '');
                     try {
-                        // Get file metadata including download link
                         const fileResponse = await fetch(
                             `https://www.googleapis.com/drive/v3/files/${fileId}?fields=webContentLink,thumbnailLink`,
-                            {
-                                headers: {
-                                    'Authorization': `Bearer ${config.drive.token}`
-                                }
-                            }
+                            { headers: { 'Authorization': `Bearer ${config.drive.token}` } }
                         );
 
                         if (fileResponse.ok) {
                             const fileData = await fileResponse.json();
-                            // Use thumbnail for display
-                            displayUrls.push(fileData.thumbnailLink || fileData.webContentLink);
-                        } else {
-                            displayUrls.push(null);
+                            // Google thumbnails are often accessible
+                            thumbUrl = fileData.thumbnailLink;
+                            fullUrl = fileData.webContentLink;
+
+                            // High res thumbnail hack: remove standard size param if present (e.g. =s220)
+                            // But usually safely defaults to something readable.
                         }
+
+                        if (!thumbUrl) thumbUrl = fullUrl;
+                        displayItems.push({ thumb: thumbUrl, full: fullUrl });
+
                     } catch (error) {
                         console.error('Error fetching Google Drive link:', error);
-                        displayUrls.push(null);
+                        displayItems.push({ thumb: null, full: null });
                     }
                 } else if (photoUrl.includes('dropbox.com')) {
-                    // Convert old-style Dropbox URLs
-                    let convertedUrl = photoUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-                    convertedUrl = convertedUrl.replace('?dl=0', '');
-                    convertedUrl = convertedUrl.replace('?dl=1', '');
-                    displayUrls.push(convertedUrl);
+                    // Legacy Dropbox
+                    let convertedUrl = photoUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com')
+                        .replace('?dl=0', '').replace('?dl=1', '');
+                    displayItems.push({ thumb: convertedUrl, full: convertedUrl });
                 } else {
-                    // Other URLs
-                    displayUrls.push(photoUrl);
+                    // Standard URL
+                    displayItems.push({ thumb: photoUrl, full: photoUrl });
                 }
             }
 
             // Display thumbnails with delete buttons
             let photosHTML = '';
 
-            displayUrls.forEach((url, index) => {
-                if (url) {
+            displayItems.forEach((item, index) => {
+                if (item && item.thumb) {
                     photosHTML += `
                         <div id="existingPhoto${index}" style="position: relative; border: 2px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-light);">
                             <button type="button" onclick="deleteExistingPhoto(${index}); event.stopPropagation();" 
                                     style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(255,0,0,0.8); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1.2rem; line-height: 1; z-index: 10; display: flex; align-items: center; justify-content: center;"
                                     title="Delete photo">×</button>
-                            <div onclick="viewPhotoLarge('${url.replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer;">
-                                <img src="${url}" 
+                            <div onclick="viewPhotoLarge('${(item.full || item.thumb).replace(/'/g, "\\'")}'); event.stopPropagation();" style="cursor: pointer;">
+                                <img src="${item.thumb}" 
                                      alt="Photo ${index + 1}" 
                                      style="width: 100%; height: 150px; object-fit: cover;"
                                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
