@@ -1867,7 +1867,8 @@
             const params = new URLSearchParams({
                 client_id: DROPBOX_OAUTH_CONFIG.clientId,
                 redirect_uri: DROPBOX_OAUTH_CONFIG.redirectUri,
-                response_type: 'token' // Simple flow - token in URL hash
+                response_type: 'token',
+                scope: 'files.content.read files.content.write files.content.write sharing.read sharing.write'
             });
 
             const authUrl = `${DROPBOX_OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
@@ -2030,6 +2031,11 @@
             }
 
             try {
+                let entries = [];
+                let cursor = null;
+                let hasMore = true;
+
+                // Initial request
                 const response = await fetch('https://api.dropboxapi.com/2/files/list_folder', {
                     method: 'POST',
                     headers: {
@@ -2037,8 +2043,8 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        path: path || '',  // Ensure empty string for root
-                        limit: 100
+                        path: path || '',
+                        limit: 2000
                     })
                 });
 
@@ -2053,9 +2059,31 @@
                 }
 
                 const data = await response.json();
+                entries = [...data.entries];
+                cursor = data.cursor;
+                hasMore = data.has_more;
+
+                // Fetch remaining pages
+                while (hasMore) {
+                    const continueResponse = await fetch('https://api.dropboxapi.com/2/files/list_folder/continue', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${config.dropbox.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ cursor })
+                    });
+
+                    if (!continueResponse.ok) break;
+
+                    const continueData = await continueResponse.json();
+                    entries = [...entries, ...continueData.entries];
+                    cursor = continueData.cursor;
+                    hasMore = continueData.has_more;
+                }
 
                 // Filter to only show folders
-                const folders = data.entries.filter(entry => entry['.tag'] === 'folder');
+                const folders = entries.filter(entry => entry['.tag'] === 'folder');
 
                 if (folders.length === 0) {
                     listContainer.innerHTML = '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No subfolders in this location.</p>';
