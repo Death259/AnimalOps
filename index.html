@@ -3449,7 +3449,7 @@
         }
 
         function deleteExistingPhoto(index) {
-            if (confirm('Delete this photo? This will remove it from cloud storage and cannot be undone.')) {
+            if (confirm('Remove this photo from the record? The file will remain in your cloud storage.')) {
                 window.deletedPhotoIndices.add(index);
                 const photoDiv = document.getElementById(`existingPhoto${index}`);
                 if (photoDiv) {
@@ -3464,59 +3464,7 @@
             }
         }
 
-        async function deletePhotoFromCloud(photoPath) {
-            // Determine which cloud provider and delete accordingly
-            if (photoPath.startsWith('DROPBOX:')) {
-                const dropboxPath = photoPath.replace('DROPBOX:', '');
-                try {
-                    await fetch('https://api.dropboxapi.com/2/files/delete_v2', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${config.dropbox.token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            path: dropboxPath
-                        })
-                    });
-                    console.log('Deleted from Dropbox:', dropboxPath);
-                } catch (error) {
-                    console.error('Error deleting from Dropbox:', error);
-                }
-            } else if (photoPath.startsWith('ONEDRIVE:')) {
-                const onedrivePath = photoPath.replace('ONEDRIVE:', '');
-                try {
-                    await fetch(
-                        `https://graph.microsoft.com/v1.0/me/drive/root:${onedrivePath}`,
-                        {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${config.onedrive.token}`
-                            }
-                        }
-                    );
-                    console.log('Deleted from OneDrive:', onedrivePath);
-                } catch (error) {
-                    console.error('Error deleting from OneDrive:', error);
-                }
-            } else if (photoPath.startsWith('GDRIVE:')) {
-                const fileId = photoPath.replace('GDRIVE:', '');
-                try {
-                    await fetch(
-                        `https://www.googleapis.com/drive/v3/files/${fileId}`,
-                        {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${config.drive.token}`
-                            }
-                        }
-                    );
-                    console.log('Deleted from Google Drive:', fileId);
-                } catch (error) {
-                    console.error('Error deleting from Google Drive:', error);
-                }
-            }
-        }
+        // deletePhotoFromCloud removed as per request (photos remain in cloud)
 
         function viewPhotoLarge(url) {
             // Create a modal to view the photo larger
@@ -3579,27 +3527,9 @@
                     // Handle photo deletions
                     let existingPhotoLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
 
-                    // Delete photos from cloud storage
+                    // Remove deleted photos from list
+                    // Photos are NOT deleted from cloud storage, only unlinked
                     if (window.deletedPhotoIndices && window.deletedPhotoIndices.size > 0) {
-                        const deletionPromises = [];
-                        window.deletedPhotoIndices.forEach(index => {
-                            if (existingPhotoLinks[index]) {
-                                deletionPromises.push(deletePhotoFromCloud(existingPhotoLinks[index]));
-                            }
-                        });
-
-                        // Wait for all deletions to complete
-                        if (deletionPromises.length > 0) {
-                            try {
-                                await Promise.all(deletionPromises);
-                                console.log(`Deleted ${deletionPromises.length} photo(s) from cloud storage`);
-                            } catch (error) {
-                                console.error('Some photos failed to delete from cloud:', error);
-                                // Continue anyway - we'll still remove from spreadsheet
-                            }
-                        }
-
-                        // Remove deleted photos from list
                         existingPhotoLinks = existingPhotoLinks.filter((link, index) => !window.deletedPhotoIndices.has(index));
                     }
 
