@@ -974,9 +974,16 @@
                                 style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(0, 120, 212, 0.1); border-radius: 8px;">
                                 <p style="margin: 0; color: var(--success);"><strong>✓ Connected to OneDrive</strong>
                                 </p>
-                                <p style="margin: 0.5rem 0 0.5rem 0; font-size: 0.9rem; color: var(--text-light);">
-                                    Folder will be auto-created: <strong>/AnimalOps</strong>
-                                </p>
+
+                                <div id="onedriveFolderSection" style="margin-top: 1rem;">
+                                    <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Folder:</p>
+                                    <button class="btn btn-secondary" onclick="openOneDriveFolderPicker()"
+                                        style="font-size: 0.9rem;">
+                                        <span>📁 Browse Folders</span>
+                                    </button>
+                                    <p id="selectedOneDriveFolder"
+                                        style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
+                                </div>
 
                                 <button class="btn btn-outline" onclick="disconnectOneDrive()"
                                     style="margin-top: 0.5rem; font-size: 0.85rem;">
@@ -1477,7 +1484,31 @@
             </div>
         </div>
     </div>
+    </div>
+    </div>
 
+    <!-- OneDrive Folder Picker Modal -->
+    <div class="modal" id="onedriveFolderPickerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select a Folder</h2>
+                <button class="close-modal" onclick="closeOneDriveFolderPicker()">×</button>
+            </div>
+
+            <div id="onedriveFolderPickerContent" style="padding: 1rem;">
+                <div id="onedriveBreadcrumb"
+                    style="margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">
+                    <strong>Current:</strong> <span id="currentOneDrivePath">/</span>
+                </div>
+                <div id="onedriveFolderList"></div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                    <button class="btn btn-primary" onclick="selectCurrentOneDriveFolder()" style="width: 100%;">
+                        <span>✓ Use This Folder</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <footer>
         <p>AnimalOps © 2026 - Built for animal rescue organizations with ❤️</p>
     </footer>
@@ -2226,6 +2257,141 @@
 
                 checkReadyState();
             }
+        }
+
+        checkReadyState();
+            }
+        }
+
+        // ============ ONEDRIVE FOLDER PICKER ============
+
+        let currentOneDrivePath = '/';
+        let currentOneDriveId = 'root';
+
+        function openOneDriveFolderPicker() {
+            document.getElementById('onedriveFolderPickerModal').style.display = 'flex';
+            currentOneDrivePath = '/';
+            currentOneDriveId = 'root';
+            document.getElementById('currentOneDrivePath').textContent = currentOneDrivePath;
+            listOneDriveFolders('root');
+        }
+
+        function closeOneDriveFolderPicker() {
+            document.getElementById('onedriveFolderPickerModal').style.display = 'none';
+        }
+
+        async function listOneDriveFolders(folderId, folderName = null) {
+            const listContainer = document.getElementById('onedriveFolderList');
+            listContainer.innerHTML = '<p style="color: var(--text-light); text-align: center;">Loading folders...</p>';
+
+            // Update path (breadcrumbs simplified for now)
+            if (folderName) {
+                if (folderId === 'root') {
+                    currentOneDrivePath = '/';
+                } else {
+                    // Logic to update path would go here, for now simple append or reset
+                    // For typical use, users just go down, so we can append.
+                    // But going up is tricky without tracking history. 
+                    // Let's just show current folder name for now or keep it simple.
+                    if (currentOneDrivePath === '/') currentOneDrivePath = '';
+                    currentOneDrivePath += '/' + folderName;
+                }
+                document.getElementById('currentOneDrivePath').textContent = currentOneDrivePath || '/';
+            }
+
+            // Track current ID for selection
+            currentOneDriveId = folderId;
+
+            try {
+                // Graph API: List children that are folders
+                // filter: folder ne null
+                // select: id, name, folder
+                const response = await fetch(
+                    `https://graph.microsoft.com/v1.0/me/drive/items/${folderId}/children?filter=folder ne null&select=id,name,folder,parentReference`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.onedrive.token}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to list folders');
+                }
+
+                const data = await response.json();
+                const folders = data.value;
+
+                listContainer.innerHTML = '';
+
+                if (folders.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 1rem;">No subfolders found.</p>';
+                    return;
+                }
+
+                // Add "Go Up" button if not at root
+                if (folderId !== 'root') {
+                    // Note: Graph API items have parentReference, but going 'up' simply by navigation history 
+                    // is easier if we just rely on the breadcrumb or reset. 
+                    // For MVP, let's just allow drilling down. To go up, close and reopen or use a "Reset" button?
+                    // Let's add a "Back to Root" for simplicity.
+                    const rootBtn = document.createElement('div');
+                    rootBtn.className = 'folder-item';
+                    rootBtn.innerHTML = '<span>📁 <strong>.. (Back to Root)</strong></span>';
+                    rootBtn.onclick = () => {
+                        currentOneDrivePath = '/';
+                        document.getElementById('currentOneDrivePath').textContent = '/';
+                        listOneDriveFolders('root');
+                    };
+                    listContainer.appendChild(rootBtn);
+                }
+
+                folders.forEach(folder => {
+                    const div = document.createElement('div');
+                    div.className = 'folder-item';
+                    div.style.cssText = 'padding: 0.75rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center;';
+                    div.innerHTML = `<span>📁 ${folder.name}</span>`;
+
+                    // Hover effect
+                    div.onmouseover = () => div.style.backgroundColor = 'var(--bg-light)';
+                    div.onmouseout = () => div.style.backgroundColor = 'transparent';
+
+                    div.onclick = () => {
+                        listOneDriveFolders(folder.id, folder.name);
+                    };
+
+                    listContainer.appendChild(div);
+                });
+
+            } catch (error) {
+                console.error('Error listing OneDrive folders:', error);
+                listContainer.innerHTML = `<p style="color: red; text-align: center;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function selectCurrentOneDriveFolder() {
+            // Save current selection
+            // We store the PATH as the config.onedrive.folder
+            // Note: Unlike Dropbox, OneDrive paths can be tricky if we only have IDs.
+            // But for display purposes, we used `currentOneDrivePath`.
+            // Ideally we store the ID, but the current app logic uses Paths for display/upload logic 
+            // to ensure "AnimalOps" subfolder structure.
+
+            // Wait: The existing uploadPhotosToOneDrive function uses:
+            // `const baseFolder = config.onedrive.folder.replace(/^\//, '');`
+            // and then `https://graph.microsoft.com/v1.0/me/drive/root:/${fullPath}:/content`
+
+            // So we MUST store a PATH that relative to root.
+
+            config.onedrive.folder = currentOneDrivePath;
+
+            // Update UI
+            document.getElementById('selectedOneDriveFolder').innerHTML = `<strong>Selected:</strong> ${currentOneDrivePath}`;
+
+            // Close modal
+            closeOneDriveFolderPicker();
+
+            saveConfig();
         }
 
         function disconnectDropbox() {
