@@ -1110,7 +1110,8 @@
         <!-- Main Form Section -->
         <div class="card setup-section" id="formSection">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h2 style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin: 0;">Add New Animal</h2>
+                <h2 id="formTitle" style="font-family: 'Outfit', sans-serif; font-size: 1.8rem; margin: 0;">Add New
+                    Animal</h2>
                 <button type="button" class="btn btn-outline" onclick="showRecords()">
                     <span>📋 View Records</span>
                 </button>
@@ -4318,6 +4319,7 @@
 
         function resetForm() {
             document.getElementById('animalForm').reset();
+            document.getElementById('formTitle').textContent = 'Add New Animal';
             document.getElementById('intakeDate').valueAsDate = new Date();
             selectedPhotos = [];
             document.getElementById('photoPreview').innerHTML = '';
