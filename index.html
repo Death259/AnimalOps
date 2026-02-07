@@ -2455,6 +2455,117 @@
             saveConfig();
         }
 
+        // ============ GOOGLE DRIVE FOLDER PICKER ============
+
+        let currentDrivePathName = 'My Drive';
+        let currentDriveId = 'root';
+
+        function openDriveFolderPicker() {
+            document.getElementById('driveFolderPickerModal').style.display = 'flex';
+            currentDrivePathName = 'My Drive';
+            currentDriveId = 'root';
+            document.getElementById('currentDrivePath').textContent = currentDrivePathName;
+            listDriveFolders('root');
+        }
+
+        function closeDriveFolderPicker() {
+            document.getElementById('driveFolderPickerModal').style.display = 'none';
+        }
+
+        async function listDriveFolders(folderId, folderName = null) {
+            const listContainer = document.getElementById('driveFolderList');
+            listContainer.innerHTML = '<p style="color: var(--text-light); text-align: center;">Loading folders...</p>';
+
+            // Update path name for display
+            if (folderName) {
+                 if (folderId === 'root') {
+                    currentDrivePathName = 'My Drive';
+                } else {
+                    currentDrivePathName += ' > ' + folderName;
+                }
+                document.getElementById('currentDrivePath').textContent = currentDrivePathName;
+            }
+            
+            currentDriveId = folderId;
+
+            try {
+                // Drive API v3: List files
+                // Query: mimeType = 'application/vnd.google-apps.folder' and '${folderId}' in parents and trashed = false
+                const query = `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+                const response = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&orderBy=name`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to list folders');
+                }
+
+                const data = await response.json();
+                const folders = data.files;
+
+                listContainer.innerHTML = '';
+
+                if (!folders || folders.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 1rem;">No subfolders found.</p>';
+                    // Don't return, we might want to add "Back to Root" still
+                }
+                
+                // Add "Back to Root" button if not at root
+                if (folderId !== 'root') {
+                     const rootBtn = document.createElement('div');
+                     rootBtn.className = 'folder-item';
+                     rootBtn.innerHTML = '<span>📁 <strong>.. (Back to My Drive)</strong></span>';
+                     rootBtn.onclick = () => {
+                         currentDrivePathName = 'My Drive';
+                         document.getElementById('currentDrivePath').textContent = 'My Drive';
+                         listDriveFolders('root');
+                     };
+                     listContainer.appendChild(rootBtn);
+                }
+
+                if (folders) {
+                    folders.forEach(folder => {
+                        const div = document.createElement('div');
+                        div.className = 'folder-item';
+                        div.style.cssText = 'padding: 0.75rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center;';
+                        div.innerHTML = `<span>📁 ${folder.name}</span>`;
+                        
+                        // Hover effect
+                        div.onmouseover = () => div.style.backgroundColor = 'var(--bg-light)';
+                        div.onmouseout = () => div.style.backgroundColor = 'transparent';
+
+                        div.onclick = () => {
+                            listDriveFolders(folder.id, folder.name);
+                        };
+                        
+                        listContainer.appendChild(div);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error listing Drive folders:', error);
+                listContainer.innerHTML = `<p style="color: red; text-align: center;">Error: ${error.message}</p>`;
+            }
+        }
+
+        function selectCurrentDriveFolder() {
+            // Save selected folder ID
+            config.drive.folderId = currentDriveId;
+            
+            // Update UI
+            // We use the ID for the actual logic, but show the "Breadcrumb" name or just ID?
+            // Existing logic uses config.drive.folderId
+            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${currentDriveId === 'root' ? 'My Drive (Root)' : currentDriveId}`;
+            
+            closeDriveFolderPicker();
+            saveConfig();
+        }
+
         function disconnectDropbox() {
             if (confirm('Are you sure you want to disconnect Dropbox? You will need to sign in again.')) {
                 config.dropbox = {
