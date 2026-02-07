@@ -1502,8 +1502,35 @@
             clientId: '3f068a33-cc28-4f18-99cb-a8f11d6d2972',
             redirectUri: 'https://death259.github.io/AnimalOps/',
             authEndpoint: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
-            scopes: 'Files.ReadWrite.All User.Read'
+            tokenEndpoint: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+            scopes: 'Files.ReadWrite.All User.Read offline_access'
         };
+
+        // PKCE Helper Functions
+        function generateCodeVerifier() {
+            const array = new Uint32Array(32);
+            window.crypto.getRandomValues(array);
+            return Array.from(array, dec => ('0' + dec.toString(16)).substr(-2)).join('');
+        }
+
+        async function generateCodeChallenge(codeVerifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(codeVerifier);
+            const digest = await window.crypto.subtle.digest('SHA-256', data);
+            return base64UrlEncode(digest);
+        }
+
+        function base64UrlEncode(arrayBuffer) {
+            const bytes = new Uint8Array(arrayBuffer);
+            let binary = '';
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary)
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=+$/, '');
+        }
 
         // Global state
         let config = {
