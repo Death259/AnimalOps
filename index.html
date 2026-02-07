@@ -1029,19 +1029,64 @@
                         <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos
                             and documents</p>
 
-                        <label for="driveToken">API Access Token</label>
-                        <input type="password" id="driveToken" placeholder="ya29.a0...">
+                        <div id="driveOAuthSection">
+                            <div class="button-group" style="margin-top: 0rem;">
+                                <button class="btn btn-primary" onclick="signInWithGoogle()" id="driveSignInBtn">
+                                    <span>🔐 Sign in with Google</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showHelp('drive')">
+                                    <span>📖 Help</span>
+                                </button>
+                            </div>
 
-                        <label for="driveFolder">Folder Name (optional)</label>
-                        <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
+                            <div id="driveConnectionInfo"
+                                style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(52, 168, 83, 0.1); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected to Google
+                                        Drive</strong>
+                                </p>
 
-                        <div class="button-group">
-                            <button class="btn btn-primary" onclick="connectGoogleDrive()">
-                                <span>Connect</span>
-                            </button>
-                            <button class="btn btn-outline" onclick="showHelp('drive')">
-                                <span>📖 How to Get Token</span>
-                            </button>
+                                <div id="driveFolderSection" style="margin-top: 1rem;">
+                                    <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Folder:</p>
+                                    <button class="btn btn-secondary" onclick="openDriveFolderPicker()"
+                                        style="font-size: 0.9rem;">
+                                        <span>📁 Browse Folders</span>
+                                    </button>
+                                    <p id="selectedDriveFolder"
+                                        style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
+                                </div>
+
+                                <button class="btn btn-outline" onclick="disconnectGoogleDrive()"
+                                    style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <span>Disconnect</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Fallback to manual token (hidden by default) -->
+                        <div id="driveManualSection" style="display: none;">
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+                                <strong>Advanced:</strong> Manual token entry
+                            </p>
+
+                            <label for="driveToken">API Access Token</label>
+                            <input type="password" id="driveToken" placeholder="ya29.a0...">
+
+                            <label for="driveFolder">Folder Name (optional)</label>
+                            <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
+
+                            <div class="button-group">
+                                <button class="btn btn-primary" onclick="connectGoogleDrive()">
+                                    <span>Connect</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showDriveOAuthSection()">
+                                    <span>⬅ Back to OAuth</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="driveManualToggle" style="margin-top: 1rem; text-align: center;">
+                            <a href="#" onclick="showDriveManualSection(); return false;"
+                                style="font-size: 0.85rem; color: var(--text-light);">Use manual token instead</a>
                         </div>
                     </div>
                 </div>
@@ -1762,14 +1807,31 @@
                         config.sheets.spreadsheetId = null; // Will be set when user picks
                         config.sheets.userEmail = userInfo.email;
 
+                        // Also connect Drive (Unified Login)
+                        config.drive.connected = true;
+                        config.drive.token = accessToken;
+                        config.drive.folderId = null; // Reset folder to ensure they pick/create one
+
                         saveConfig();
 
-                        // Update UI
+                        // Update UI - Sheets
                         document.getElementById('sheetsStatus').textContent = 'Connected';
                         document.getElementById('sheetsStatus').className = 'status-badge connected';
                         document.getElementById('sheetsConfig').classList.add('connected');
                         document.getElementById('sheetsConnectionInfo').style.display = 'block';
                         document.getElementById('sheetsUserEmail').textContent = userInfo.email;
+
+                        // Update UI - Drive
+                        document.getElementById('driveStatus').textContent = 'Connected';
+                        document.getElementById('driveStatus').className = 'status-badge connected';
+                        document.getElementById('driveConfig').classList.add('connected');
+                        document.getElementById('driveConnectionInfo').style.display = 'block';
+                        // Hide manual input if it was showing
+                        document.getElementById('driveManualSection').style.display = 'none';
+
+                        // Disconnect others to ensure exclusive photo storage
+                        if (config.dropbox.connected) disconnectDropbox();
+                        if (config.onedrive.connected) disconnectOneDrive();
 
                         checkReadyState();
 
