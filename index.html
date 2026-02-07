@@ -2975,13 +2975,7 @@
             }
         }
 
-        function disconnectOneDrive() {
-            config.onedrive.connected = false;
-            config.onedrive.token = null;
-            document.getElementById('onedriveStatus').textContent = 'Not Connected';
-            document.getElementById('onedriveStatus').className = 'status-badge disconnected';
-            document.getElementById('onedriveConfig').classList.remove('connected');
-        }
+
 
         function disconnectGoogleDrive() {
             config.drive.connected = false;
