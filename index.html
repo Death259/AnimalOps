@@ -2092,82 +2092,121 @@
                 return;
             }
 
-            // Using Implicit Grant Flow (response_type=token)
-            const params = new URLSearchParams({
-                client_id: ONEDRIVE_OAUTH_CONFIG.clientId,
-                redirect_uri: ONEDRIVE_OAUTH_CONFIG.redirectUri,
-                response_type: 'token',
-                scope: ONEDRIVE_OAUTH_CONFIG.scopes,
-                state: 'onedrive_oauth'
-            });
+            try {
+                // Generate PKCE codes
+                const codes = await generatePKCECodes();
 
-            const authUrl = `${ONEDRIVE_OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
-            window.location.href = authUrl;
+                // Store verifier for the callback
+                sessionStorage.setItem('onedrive_code_verifier', codes.verifier);
+                sessionStorage.setItem('onedrive_state', 'onedrive_oauth_pkce');
+
+                // Using Authorization Code Flow with PKCE
+                const params = new URLSearchParams({
+                    client_id: ONEDRIVE_OAUTH_CONFIG.clientId,
+                    redirect_uri: ONEDRIVE_OAUTH_CONFIG.redirectUri,
+                    response_type: 'code',
+                    scope: ONEDRIVE_OAUTH_CONFIG.scopes,
+                    state: 'onedrive_oauth_pkce',
+                    code_challenge: codes.challenge,
+                    code_challenge_method: 'S256'
+                });
+
+                const authUrl = `${ONEDRIVE_OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
+                window.location.href = authUrl;
+
+            } catch (error) {
+                console.error('Error initiating OneDrive login:', error);
+                alert('Failed to start OneDrive login: ' + error.message);
+            }
+        }
+
+        async function generatePKCECodes() {
+            const verifier = generateCodeVerifier();
+            const challenge = await generateCodeChallenge(verifier);
+            return { verifier, challenge };
         }
 
         async function handleMicrosoftOAuthCallback() {
-            // Check for hash
-            if (window.location.hash) {
-                const hash = window.location.hash.substring(1);
-                const params = new URLSearchParams(hash);
-                const accessToken = params.get('access_token');
-                const expiresIn = params.get('expires_in');
-                const state = params.get('state');
-                const error = params.get('error');
+            // Check for code in query params (Optimization: Check search params first)
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
+            const error = urlParams.get('error');
 
-                // Check if this is for OneDrive
-                if (state !== 'onedrive_oauth') {
+            if (code && state === 'onedrive_oauth_pkce') {
+                // It's a OneDrive callback!
+                const verifier = sessionStorage.getItem('onedrive_code_verifier');
+
+                if (!verifier) {
+                    console.error('No code verifier found in session storage');
                     return;
                 }
 
-                if (error) {
-                    alert(`OneDrive Login failed: ${error} - ${params.get('error_description')}`);
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    return;
-                }
+                // Clear URL params immediately to keep things clean
+                window.history.replaceState({}, document.title, window.location.pathname);
 
-                if (accessToken) {
-                    try {
-                        // Test the connection
-                        const response = await fetch('https://graph.microsoft.com/v1.0/me', {
-                            headers: {
-                                'Authorization': `Bearer ${accessToken}`
-                            }
-                        });
+                try {
+                    // Exchange code for token
+                    const bodyParams = new URLSearchParams({
+                        client_id: ONEDRIVE_OAUTH_CONFIG.clientId,
+                        redirect_uri: ONEDRIVE_OAUTH_CONFIG.redirectUri,
+                        grant_type: 'authorization_code',
+                        code: code,
+                        code_verifier: verifier
+                    });
 
-                        if (!response.ok) {
-                            throw new Error('Failed to verify token');
-                        }
+                    const response = await fetch(ONEDRIVE_OAUTH_CONFIG.tokenEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: bodyParams
+                    });
 
-                        // Save config
-                        config.onedrive.connected = true;
-                        config.onedrive.token = accessToken;
-                        if (expiresIn) {
-                            config.onedrive.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
-                        }
-
-                        saveConfig();
-
-                        // Update UI
-                        document.getElementById('onedriveStatus').textContent = 'Connected';
-                        document.getElementById('onedriveStatus').className = 'status-badge connected';
-                        document.getElementById('onedriveConfig').classList.add('connected');
-                        document.getElementById('onedriveConnectionInfo').style.display = 'block';
-
-                        // Disconnect others
-                        if (config.dropbox.connected) disconnectDropbox();
-                        if (config.drive.connected) disconnectGoogleDrive();
-
-                        checkReadyState();
-
-                        // clean URL
-                        window.history.replaceState({}, document.title, window.location.pathname);
-
-                    } catch (error) {
-                        console.error('OneDrive OAuth error:', error);
-                        alert('Failed to connect to OneDrive. Please try again.');
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`Token exchange failed: ${errText}`);
                     }
+
+                    const tokens = await response.json();
+
+                    // Save config
+                    config.onedrive.connected = true;
+                    config.onedrive.token = tokens.access_token;
+                    // Microsoft tokens are valid for 1 hour usually
+                    config.onedrive.expiresAt = Date.now() + (tokens.expires_in * 1000);
+
+                    if (tokens.refresh_token) {
+                        config.onedrive.refreshToken = tokens.refresh_token; // We can use this later
+                    }
+
+                    saveConfig();
+
+                    // Clean up session
+                    sessionStorage.removeItem('onedrive_code_verifier');
+                    sessionStorage.removeItem('onedrive_state');
+
+                    // Update UI
+                    document.getElementById('onedriveStatus').textContent = 'Connected';
+                    document.getElementById('onedriveStatus').className = 'status-badge connected';
+                    document.getElementById('onedriveConfig').classList.add('connected');
+                    document.getElementById('onedriveConnectionInfo').style.display = 'block';
+
+                    // Disconnect others
+                    if (config.dropbox.connected) disconnectDropbox();
+                    if (config.drive.connected) disconnectGoogleDrive();
+
+                    checkReadyState();
+
+                    alert('Successfully connected to OneDrive!');
+
+                } catch (error) {
+                    console.error('OneDrive OAuth Error:', error);
+                    alert(`Failed to connect to OneDrive: ${error.message}`);
                 }
+            } else if (error && state === 'onedrive_oauth_pkce') {
+                alert(`OneDrive Login failed: ${error} - ${urlParams.get('error_description')}`);
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
 
