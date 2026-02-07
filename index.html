@@ -960,20 +960,57 @@
                         <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos
                             and documents</p>
 
-                        <label for="onedriveToken">API Access Token</label>
-                        <input type="password" id="onedriveToken" placeholder="EwB...">
+                        <div id="onedriveOAuthSection">
+                            <div class="button-group" style="margin-top: 0rem;">
+                                <button class="btn btn-primary" onclick="signInWithMicrosoft()" id="onedriveSignInBtn">
+                                    <span>🔐 Sign in with Microsoft</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showHelp('onedrive')">
+                                    <span>📖 Help</span>
+                                </button>
+                            </div>
 
-                        <label for="onedriveFolder">Folder Path (optional)</label>
-                        <input type="text" id="onedriveFolder" placeholder="/AnimalOps" value="/AnimalOps">
+                            <div id="onedriveConnectionInfo"
+                                style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(0, 120, 212, 0.1); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected to OneDrive</strong>
+                                </p>
+                                <p style="margin: 0.5rem 0 0.5rem 0; font-size: 0.9rem; color: var(--text-light);">
+                                    Folder will be auto-created: <strong>/AnimalOps</strong>
+                                </p>
 
-                        <div class="button-group">
-                            <button class="btn btn-primary" onclick="connectOneDrive()">
-                                <span>Connect</span>
-                            </button>
-                            <button class="btn btn-outline" onclick="showHelp('onedrive')">
-                                <span>📖 How to Get Token</span>
-                            </button>
+                                <button class="btn btn-outline" onclick="disconnectOneDrive()"
+                                    style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <span>Disconnect</span>
+                                </button>
+                            </div>
                         </div>
+
+                        <!-- Fallback to manual token (hidden by default) -->
+                        <div id="onedriveManualSection" style="display: none;">
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+                                <strong>Advanced:</strong> Manual token entry
+                            </p>
+
+                            <label for="onedriveToken">API Access Token</label>
+                            <input type="password" id="onedriveToken" placeholder="EwB...">
+
+                            <label for="onedriveFolder">Folder Path (optional)</label>
+                            <input type="text" id="onedriveFolder" placeholder="/AnimalOps" value="/AnimalOps">
+
+                            <div class="button-group">
+                                <button class="btn btn-primary" onclick="connectOneDrive()">
+                                    <span>Connect</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showOneDriveOAuthSection()">
+                                    <span>← Back to Sign In</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-text" onclick="toggleOneDriveManualMode()"
+                            style="margin-top: 1rem; font-size: 0.85rem;">
+                            <span id="toggleOneDriveModeText">Use manual token instead</span>
+                        </button>
                     </div>
 
                     <!-- Google Drive Configuration -->
@@ -1461,6 +1498,13 @@
             tokenEndpoint: 'https://api.dropboxapi.com/oauth2/token'
         };
 
+        const ONEDRIVE_OAUTH_CONFIG = {
+            clientId: '3f068a33-cc28-4f18-99cb-a8f11d6d2972',
+            redirectUri: 'https://death259.github.io/AnimalOps/',
+            authEndpoint: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+            scopes: 'Files.ReadWrite.All User.Read'
+        };
+
         // Global state
         let config = {
             sheets: {
@@ -1499,6 +1543,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             handleOAuthCallback();
             handleDropboxOAuthCallback();
+            handleMicrosoftOAuthCallback();
             loadSavedConfig();
         });
 
@@ -1568,11 +1613,33 @@
                     console.error('Error loading saved Dropbox config:', e);
                 }
             }
+
+            // Load saved OneDrive config
+            const savedOneDrive = localStorage.getItem('animalops_onedrive_config');
+            if (savedOneDrive) {
+                try {
+                    const onedriveConfig = JSON.parse(savedOneDrive);
+                    config.onedrive = { ...config.onedrive, ...onedriveConfig };
+
+                    if (config.onedrive.connected && config.onedrive.token) {
+                        // Update UI
+                        document.getElementById('onedriveStatus').textContent = 'Connected';
+                        document.getElementById('onedriveStatus').className = 'status-badge connected';
+                        document.getElementById('onedriveConfig').classList.add('connected');
+                        document.getElementById('onedriveConnectionInfo').style.display = 'block'; // Ensure this exists in HTML or handled
+
+                        checkReadyState();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved OneDrive config:', e);
+                }
+            }
         }
 
         function saveConfig() {
             localStorage.setItem('animalops_sheets_config', JSON.stringify(config.sheets));
             localStorage.setItem('animalops_dropbox_config', JSON.stringify(config.dropbox));
+            localStorage.setItem('animalops_onedrive_config', JSON.stringify(config.onedrive));
         }
 
         async function signInWithGoogle() {
@@ -2230,7 +2297,57 @@
                     alert(`Failed to connect to Dropbox: ${error.error_summary}`);
                 }
             } catch (error) {
-                alert(`Connection error: ${error.message}`);
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to verify token');
+            }
+
+            // Save config
+            config.onedrive.connected = true;
+            config.onedrive.token = accessToken;
+            config.onedrive.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
+
+            saveConfig();
+
+            // Update UI
+            document.getElementById('onedriveStatus').textContent = 'Connected';
+            document.getElementById('onedriveStatus').className = 'status-badge connected';
+            document.getElementById('onedriveConfig').classList.add('connected');
+            document.getElementById('onedriveConnectionInfo').style.display = 'block';
+
+            // Disconnect others
+            if (config.dropbox.connected) disconnectDropbox();
+            if (config.drive.connected) disconnectGoogleDrive();
+
+            checkReadyState();
+
+            // clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+        } catch (error) {
+            console.error('OneDrive OAuth error:', error);
+            alert('Failed to connect to OneDrive. Please try again.');
+        }
+                }
+            }
+        }
+
+        function disconnectOneDrive() {
+            if (confirm('Are you sure you want to disconnect OneDrive?')) {
+                config.onedrive = {
+                    connected: false,
+                    token: null,
+                    folder: '/AnimalOps'
+                };
+                localStorage.removeItem('animalops_onedrive_config');
+
+                document.getElementById('onedriveStatus').textContent = 'Not Connected';
+                document.getElementById('onedriveStatus').className = 'status-badge disconnected';
+                document.getElementById('onedriveConfig').classList.remove('connected');
+                document.getElementById('onedriveConnectionInfo').style.display = 'none';
+
+                checkReadyState();
             }
         }
 
