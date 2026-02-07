@@ -2659,7 +2659,9 @@
                     }));
 
                     updateStats();
-                    displayRecords(allRecords);
+                    updateStats();
+                    // Default sort by Animal ID
+                    sortRecords('animalId');
                 } else {
                     // Check if token expired
                     const handled = await handleGoogleSheetsError(null, response);
@@ -2847,15 +2849,12 @@
                     aVal = new Date(aVal || '1900-01-01');
                     bVal = new Date(bVal || '1900-01-01');
                 }
-                // Handle string columns (case insensitive)
+                // Handle string columns (case insensitive, natural sort)
                 else {
-                    aVal = aVal.toString().toLowerCase();
-                    bVal = bVal.toString().toLowerCase();
+                    const strA = String(aVal);
+                    const strB = String(bVal);
+                    return strA.localeCompare(strB, undefined, { numeric: true, sensitivity: 'base' }) * (currentSortDirection === 'asc' ? 1 : -1);
                 }
-
-                if (aVal < bVal) return currentSortDirection === 'asc' ? -1 : 1;
-                if (aVal > bVal) return currentSortDirection === 'asc' ? 1 : -1;
-                return 0;
             });
 
             displayRecords(sorted);
