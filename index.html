@@ -2048,13 +2048,28 @@
                 if (tokens.refresh_token) {
                     config.dropbox.refreshToken = tokens.refresh_token;
                 }
+                console.error('OneDrive OAuth error:', error);
+                alert('Failed to connect to OneDrive. Please try again.');
+            }
+                }
+            }
+        }
 
-                saveConfig();
-                return true;
+        function disconnectOneDrive() {
+            if (confirm('Are you sure you want to disconnect OneDrive?')) {
+                config.onedrive = {
+                    connected: false,
+                    token: null,
+                    folder: '/AnimalOps'
+                };
+                localStorage.removeItem('animalops_onedrive_config');
 
-            } catch (error) {
-                console.error('Dropbox token refresh error:', error);
-                return false;
+                document.getElementById('onedriveStatus').textContent = 'Not Connected';
+                document.getElementById('onedriveStatus').className = 'status-badge disconnected';
+                document.getElementById('onedriveConfig').classList.remove('connected');
+                document.getElementById('onedriveConnectionInfo').style.display = 'none';
+
+                checkReadyState();
             }
         }
 
@@ -2297,39 +2312,7 @@
                     alert(`Failed to connect to Dropbox: ${error.error_summary}`);
                 }
             } catch (error) {
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to verify token');
-            }
-
-            // Save config
-            config.onedrive.connected = true;
-            config.onedrive.token = accessToken;
-            config.onedrive.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
-
-            saveConfig();
-
-            // Update UI
-            document.getElementById('onedriveStatus').textContent = 'Connected';
-            document.getElementById('onedriveStatus').className = 'status-badge connected';
-            document.getElementById('onedriveConfig').classList.add('connected');
-            document.getElementById('onedriveConnectionInfo').style.display = 'block';
-
-            // Disconnect others
-            if (config.dropbox.connected) disconnectDropbox();
-            if (config.drive.connected) disconnectGoogleDrive();
-
-            checkReadyState();
-
-            // clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-        } catch (error) {
-            console.error('OneDrive OAuth error:', error);
-            alert('Failed to connect to OneDrive. Please try again.');
-        }
-                }
+                alert(`Connection error: ${error.message}`);
             }
         }
 
