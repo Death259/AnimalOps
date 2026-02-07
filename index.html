@@ -3231,6 +3231,9 @@
             // Switch to form section and populate fields
             showForm();
 
+            // Update Form Title
+            document.getElementById('formTitle').textContent = 'Edit Animal Record';
+
             // Populate form fields
             document.getElementById('animalName').value = record.name;
             document.getElementById('species').value = record.species;
