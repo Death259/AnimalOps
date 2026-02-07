@@ -3519,9 +3519,12 @@
                     }
                 }
 
+                let savedInternalId;
+
                 if (currentEditRow !== null) {
                     // UPDATE existing record
                     const record = allRecords.find(r => r.rowIndex === currentEditRow);
+                    savedInternalId = record.internalId;
 
                     // Handle photo deletions
                     let existingPhotoLinks = record.photoLinks ? record.photoLinks.split('|||').filter(l => l) : [];
@@ -3558,14 +3561,13 @@
 
                     await updateGoogleSheetsRow(currentEditRow, rowData);
 
-                    // Reset edit mode and deletion tracking
-                    currentEditRow = null;
+                    // Reset deletion tracking (we stay in edit mode)
                     window.deletedPhotoIndices = new Set();
-                    submitBtn.innerHTML = '<span>💾 Save Animal Record</span>';
 
                 } else {
                     // CREATE new record
                     const internalId = 'A' + Date.now();
+                    savedInternalId = internalId;
                     const timestamp = new Date().toISOString();
 
                     const rowData = [
@@ -3598,14 +3600,43 @@
                     document.getElementById('successMessage').classList.add('hidden');
                 }, 5000);
 
-                // Reset form
-                resetForm();
+                // RELOAD and STAY on the record
+                await loadRecords(); // Refresh data from sheets
+
+                // Find the record we just saved
+                const savedRecord = allRecords.find(r => r.internalId === savedInternalId);
+
+                if (savedRecord) {
+                    currentEditRow = savedRecord.rowIndex; // Set update mode
+
+                    // Update UI to reflect Edit Mode
+                    document.getElementById('formTitle').textContent = 'Edit Animal Record';
+
+                    // Clear NEW photos input (they are uploaded now)
+                    selectedPhotos = [];
+                    document.getElementById('animalPhotos').value = '';
+                    updatePhotoPreview(); // Clears the "New Photos" preview
+
+                    // Reload EXISTING photos (which now include the ones we just uploaded)
+                    if (savedRecord.photoLinks) {
+                        await loadExistingPhotos(savedRecord.photoLinks.split('|||'));
+                    } else {
+                        const photoPreview = document.getElementById('photoPreview');
+                        if (photoPreview) {
+                            photoPreview.innerHTML = '<p style="color: var(--text-light); font-size: 0.9rem; margin-top: 1rem; text-align: center; grid-column: 1 / -1;">No photos yet.</p>';
+                        }
+                    }
+                }
 
             } catch (error) {
                 alert(`Error saving record: ${error.message}`);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>💾 Save Animal Record</span>';
+                if (currentEditRow !== null) {
+                    submitBtn.innerHTML = '<span>💾 Save Changes</span>';
+                } else {
+                    submitBtn.innerHTML = '<span>💾 Save Animal Record</span>';
+                }
             }
         });
 
