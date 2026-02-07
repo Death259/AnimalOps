@@ -2048,9 +2048,98 @@
                 if (tokens.refresh_token) {
                     config.dropbox.refreshToken = tokens.refresh_token;
                 }
-                console.error('OneDrive OAuth error:', error);
-                alert('Failed to connect to OneDrive. Please try again.');
+                saveConfig();
+                return true;
+
+            } catch (error) {
+                console.error('Error refreshing Dropbox token:', error);
+                return false;
             }
+        }
+
+        // ============ MICROSOFT OAUTH ============
+
+        async function signInWithMicrosoft() {
+            if (!ONEDRIVE_OAUTH_CONFIG.clientId) {
+                alert('OneDrive Client ID is missing.');
+                return;
+            }
+
+            // Using Implicit Grant Flow (response_type=token)
+            const params = new URLSearchParams({
+                client_id: ONEDRIVE_OAUTH_CONFIG.clientId,
+                redirect_uri: ONEDRIVE_OAUTH_CONFIG.redirectUri,
+                response_type: 'token',
+                scope: ONEDRIVE_OAUTH_CONFIG.scopes,
+                state: 'onedrive_oauth'
+            });
+
+            const authUrl = `${ONEDRIVE_OAUTH_CONFIG.authEndpoint}?${params.toString()}`;
+            window.location.href = authUrl;
+        }
+
+        async function handleMicrosoftOAuthCallback() {
+            // Check for hash
+            if (window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                const params = new URLSearchParams(hash);
+                const accessToken = params.get('access_token');
+                const expiresIn = params.get('expires_in');
+                const state = params.get('state');
+                const error = params.get('error');
+
+                // Check if this is for OneDrive
+                if (state !== 'onedrive_oauth') {
+                    return;
+                }
+
+                if (error) {
+                    alert(`OneDrive Login failed: ${error} - ${params.get('error_description')}`);
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    return;
+                }
+
+                if (accessToken) {
+                    try {
+                        // Test the connection
+                        const response = await fetch('https://graph.microsoft.com/v1.0/me', {
+                            headers: {
+                                'Authorization': `Bearer ${accessToken}`
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to verify token');
+                        }
+
+                        // Save config
+                        config.onedrive.connected = true;
+                        config.onedrive.token = accessToken;
+                        if (expiresIn) {
+                            config.onedrive.expiresAt = Date.now() + (parseInt(expiresIn) * 1000);
+                        }
+
+                        saveConfig();
+
+                        // Update UI
+                        document.getElementById('onedriveStatus').textContent = 'Connected';
+                        document.getElementById('onedriveStatus').className = 'status-badge connected';
+                        document.getElementById('onedriveConfig').classList.add('connected');
+                        document.getElementById('onedriveConnectionInfo').style.display = 'block';
+
+                        // Disconnect others
+                        if (config.dropbox.connected) disconnectDropbox();
+                        if (config.drive.connected) disconnectGoogleDrive();
+
+                        checkReadyState();
+
+                        // clean URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+
+                    } catch (error) {
+                        console.error('OneDrive OAuth error:', error);
+                        alert('Failed to connect to OneDrive. Please try again.');
+                    }
                 }
             }
         }
