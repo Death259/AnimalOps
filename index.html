@@ -1029,19 +1029,64 @@
                         <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">Store animal photos
                             and documents</p>
 
-                        <label for="driveToken">API Access Token</label>
-                        <input type="password" id="driveToken" placeholder="ya29.a0...">
+                        <div id="driveOAuthSection">
+                            <div class="button-group" style="margin-top: 0rem;">
+                                <button class="btn btn-primary" onclick="signInWithGoogle()" id="driveSignInBtn">
+                                    <span>🔐 Sign in with Google</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showHelp('drive')">
+                                    <span>📖 Help</span>
+                                </button>
+                            </div>
 
-                        <label for="driveFolder">Folder Name (optional)</label>
-                        <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
+                            <div id="driveConnectionInfo"
+                                style="display: none; margin-top: 1rem; padding: 1rem; background: rgba(52, 168, 83, 0.1); border-radius: 8px;">
+                                <p style="margin: 0; color: var(--success);"><strong>✓ Connected to Google
+                                        Drive</strong>
+                                </p>
 
-                        <div class="button-group">
-                            <button class="btn btn-primary" onclick="connectGoogleDrive()">
-                                <span>Connect</span>
-                            </button>
-                            <button class="btn btn-outline" onclick="showHelp('drive')">
-                                <span>📖 How to Get Token</span>
-                            </button>
+                                <div id="driveFolderSection" style="margin-top: 1rem;">
+                                    <p style="margin: 0 0 0.5rem 0; font-weight: 500;">Select Folder:</p>
+                                    <button class="btn btn-secondary" onclick="openDriveFolderPicker()"
+                                        style="font-size: 0.9rem;">
+                                        <span>📁 Browse Folders</span>
+                                    </button>
+                                    <p id="selectedDriveFolder"
+                                        style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-light);"></p>
+                                </div>
+
+                                <button class="btn btn-outline" onclick="disconnectGoogleDrive()"
+                                    style="margin-top: 0.5rem; font-size: 0.85rem;">
+                                    <span>Disconnect</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Fallback to manual token (hidden by default) -->
+                        <div id="driveManualSection" style="display: none;">
+                            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 1rem;">
+                                <strong>Advanced:</strong> Manual token entry
+                            </p>
+
+                            <label for="driveToken">API Access Token</label>
+                            <input type="password" id="driveToken" placeholder="ya29.a0...">
+
+                            <label for="driveFolder">Folder Name (optional)</label>
+                            <input type="text" id="driveFolder" placeholder="AnimalOps" value="AnimalOps">
+
+                            <div class="button-group">
+                                <button class="btn btn-primary" onclick="connectGoogleDrive()">
+                                    <span>Connect</span>
+                                </button>
+                                <button class="btn btn-outline" onclick="showDriveOAuthSection()">
+                                    <span>⬅ Back to OAuth</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="driveManualToggle" style="margin-top: 1rem; text-align: center;">
+                            <a href="#" onclick="showDriveManualSection(); return false;"
+                                style="font-size: 0.85rem; color: var(--text-light);">Use manual token instead</a>
                         </div>
                     </div>
                 </div>
@@ -1510,6 +1555,32 @@
             </div>
         </div>
     </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Google Drive Folder Picker Modal -->
+    <div class="modal" id="driveFolderPickerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select a Folder</h2>
+                <button class="close-modal" onclick="closeDriveFolderPicker()">×</button>
+            </div>
+
+            <div id="driveFolderPickerContent" style="padding: 1rem;">
+                <div id="driveBreadcrumb"
+                    style="margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">
+                    <strong>Current:</strong> <span id="currentDrivePath">My Drive</span>
+                </div>
+                <div id="driveFolderList"></div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                    <button class="btn btn-primary" onclick="selectCurrentDriveFolder()" style="width: 100%;">
+                        <span>✓ Use This Folder</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <footer>
         <p>AnimalOps © 2026 - Built for animal rescue organizations with ❤️</p>
     </footer>
@@ -1519,7 +1590,7 @@
         const OAUTH_CONFIG = {
             clientId: '365835275822-kpaa6kkf6dc1t51ep91eaon04eave6eh.apps.googleusercontent.com',
             redirectUri: 'https://death259.github.io/AnimalOps/',
-            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.metadata.readonly',
+            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file',
             authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth'
         };
 
@@ -1685,12 +1756,57 @@
                         document.getElementById('onedriveStatus').textContent = 'Connected';
                         document.getElementById('onedriveStatus').className = 'status-badge connected';
                         document.getElementById('onedriveConfig').classList.add('connected');
-                        document.getElementById('onedriveConnectionInfo').style.display = 'block'; // Ensure this exists in HTML or handled
+                        document.getElementById('onedriveConnectionInfo').style.display = 'block';
+
+                        if (config.onedrive.folder) {
+                            document.getElementById('selectedOneDriveFolder').innerHTML = `<strong>Selected:</strong> ${config.onedrive.folder}`;
+                        }
 
                         checkReadyState();
                     }
                 } catch (e) {
                     console.error('Error loading saved OneDrive config:', e);
+                }
+            }
+
+            // Load saved Drive config
+            const savedDrive = localStorage.getItem('animalops_drive_config');
+            if (savedDrive) {
+                try {
+                    const driveConfig = JSON.parse(savedDrive);
+                    config.drive = { ...config.drive, ...driveConfig };
+
+                    if (config.drive.connected && config.drive.token) {
+                        // Update UI
+                        document.getElementById('driveStatus').textContent = 'Connected';
+                        document.getElementById('driveStatus').className = 'status-badge connected';
+                        document.getElementById('driveConfig').classList.add('connected');
+                        document.getElementById('driveConnectionInfo').style.display = 'block';
+                        document.getElementById('driveManualSection').style.display = 'none';
+
+                        // Show selected folder
+                        if (config.drive.folderPath) {
+                            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected:</strong> ${config.drive.folderPath}`;
+                        } else if (config.drive.folderId) {
+                            // Fallback: Show ID initially, then try to fetch name
+                            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${config.drive.folderId} (Loading name...)`;
+
+                            // Try to resolve name
+                            fetchDriveFolderName(config.drive.folderId).then(name => {
+                                if (name) {
+                                    config.drive.folderPath = name; // Update config with resolved name
+                                    saveConfig();
+                                    document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected:</strong> ${name}`;
+                                } else {
+                                    document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${config.drive.folderId}`;
+                                }
+                            });
+                        }
+
+                        checkReadyState();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved Drive config:', e);
                 }
             }
         }
@@ -1699,6 +1815,7 @@
             localStorage.setItem('animalops_sheets_config', JSON.stringify(config.sheets));
             localStorage.setItem('animalops_dropbox_config', JSON.stringify(config.dropbox));
             localStorage.setItem('animalops_onedrive_config', JSON.stringify(config.onedrive));
+            localStorage.setItem('animalops_drive_config', JSON.stringify(config.drive));
         }
 
         async function signInWithGoogle() {
@@ -1762,14 +1879,31 @@
                         config.sheets.spreadsheetId = null; // Will be set when user picks
                         config.sheets.userEmail = userInfo.email;
 
+                        // Also connect Drive (Unified Login)
+                        config.drive.connected = true;
+                        config.drive.token = accessToken;
+                        config.drive.folderId = null; // Reset folder to ensure they pick/create one
+
                         saveConfig();
 
-                        // Update UI
+                        // Update UI - Sheets
                         document.getElementById('sheetsStatus').textContent = 'Connected';
                         document.getElementById('sheetsStatus').className = 'status-badge connected';
                         document.getElementById('sheetsConfig').classList.add('connected');
                         document.getElementById('sheetsConnectionInfo').style.display = 'block';
                         document.getElementById('sheetsUserEmail').textContent = userInfo.email;
+
+                        // Update UI - Drive
+                        document.getElementById('driveStatus').textContent = 'Connected';
+                        document.getElementById('driveStatus').className = 'status-badge connected';
+                        document.getElementById('driveConfig').classList.add('connected');
+                        document.getElementById('driveConnectionInfo').style.display = 'block';
+                        // Hide manual input if it was showing
+                        document.getElementById('driveManualSection').style.display = 'none';
+
+                        // Disconnect others to ensure exclusive photo storage
+                        if (config.dropbox.connected) disconnectDropbox();
+                        if (config.onedrive.connected) disconnectOneDrive();
 
                         checkReadyState();
 
@@ -2393,6 +2527,134 @@
             saveConfig();
         }
 
+        // ============ GOOGLE DRIVE FOLDER PICKER ============
+
+        let currentDrivePathName = 'My Drive';
+        let currentDriveId = 'root';
+
+        function openDriveFolderPicker() {
+            document.getElementById('driveFolderPickerModal').style.display = 'flex';
+            currentDrivePathName = 'My Drive';
+            currentDriveId = 'root';
+            document.getElementById('currentDrivePath').textContent = currentDrivePathName;
+            listDriveFolders('root');
+        }
+
+        function closeDriveFolderPicker() {
+            document.getElementById('driveFolderPickerModal').style.display = 'none';
+        }
+
+        async function listDriveFolders(folderId, folderName = null) {
+            const listContainer = document.getElementById('driveFolderList');
+            listContainer.innerHTML = '<p style="color: var(--text-light); text-align: center;">Loading folders...</p>';
+
+            // Update path name for display
+            if (folderName) {
+                if (folderId === 'root') {
+                    currentDrivePathName = 'My Drive';
+                } else {
+                    currentDrivePathName += ' > ' + folderName;
+                }
+                document.getElementById('currentDrivePath').textContent = currentDrivePathName;
+            }
+
+            currentDriveId = folderId;
+
+            try {
+                // Drive API v3: List files
+                // Query: mimeType = 'application/vnd.google-apps.folder' and '${folderId}' in parents and trashed = false
+                const query = `'${folderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+                const response = await fetch(
+                    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)&orderBy=name`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${config.drive.token}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to list folders');
+                }
+
+                const data = await response.json();
+                const folders = data.files;
+
+                listContainer.innerHTML = '';
+
+                if (!folders || folders.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 1rem;">No subfolders found.</p>';
+                    // Don't return, we might want to add "Back to Root" still
+                }
+
+                // Add "Back to Root" button if not at root
+                if (folderId !== 'root') {
+                    const rootBtn = document.createElement('div');
+                    rootBtn.className = 'folder-item';
+                    rootBtn.innerHTML = '<span>📁 <strong>.. (Back to My Drive)</strong></span>';
+                    rootBtn.onclick = () => {
+                        currentDrivePathName = 'My Drive';
+                        document.getElementById('currentDrivePath').textContent = 'My Drive';
+                        listDriveFolders('root');
+                    };
+                    listContainer.appendChild(rootBtn);
+                }
+
+                if (folders) {
+                    folders.forEach(folder => {
+                        const div = document.createElement('div');
+                        div.className = 'folder-item';
+                        div.style.cssText = 'padding: 0.75rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center;';
+                        div.innerHTML = `<span>📁 ${folder.name}</span>`;
+
+                        // Hover effect
+                        div.onmouseover = () => div.style.backgroundColor = 'var(--bg-light)';
+                        div.onmouseout = () => div.style.backgroundColor = 'transparent';
+
+                        div.onclick = () => {
+                            listDriveFolders(folder.id, folder.name);
+                        };
+
+                        listContainer.appendChild(div);
+                    });
+                }
+
+            } catch (error) {
+                console.error('Error listing Drive folders:', error);
+                listContainer.innerHTML = `<p style="color: red; text-align: center;">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function fetchDriveFolderName(folderId) {
+            if (folderId === 'root') return 'My Drive';
+            try {
+                const response = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`, {
+                    headers: {
+                        'Authorization': `Bearer ${config.drive.token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.name;
+                }
+            } catch (error) {
+                console.error('Error fetching folder name:', error);
+            }
+            return null;
+        }
+
+        function selectCurrentDriveFolder() {
+            // Save selected folder ID and Path
+            config.drive.folderId = currentDriveId;
+            config.drive.folderPath = currentDrivePathName;
+
+            // Update UI
+            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected:</strong> ${currentDrivePathName}`;
+
+            closeDriveFolderPicker();
+            saveConfig();
+        }
+
         function disconnectDropbox() {
             if (confirm('Are you sure you want to disconnect Dropbox? You will need to sign in again.')) {
                 config.dropbox = {
@@ -2979,12 +3241,26 @@
 
 
         function disconnectGoogleDrive() {
-            config.drive.connected = false;
-            config.drive.token = null;
-            config.drive.folderId = null;
-            document.getElementById('driveStatus').textContent = 'Not Connected';
-            document.getElementById('driveStatus').className = 'status-badge disconnected';
-            document.getElementById('driveConfig').classList.remove('connected');
+            if (confirm('Are you sure you want to disconnect Google Drive?')) {
+                config.drive = {
+                    connected: false,
+                    token: null,
+                    folderId: null
+                };
+
+                document.getElementById('driveStatus').textContent = 'Not Connected';
+                document.getElementById('driveStatus').className = 'status-badge disconnected';
+                document.getElementById('driveConfig').classList.remove('connected');
+                document.getElementById('driveConnectionInfo').style.display = 'none';
+                document.getElementById('driveOAuthSection').querySelector('.button-group').style.display = 'flex';
+
+                // Show manual section toggle link again
+                const manualToggle = document.getElementById('driveManualToggle');
+                if (manualToggle) manualToggle.style.display = 'block';
+
+                checkReadyState();
+                saveConfig();
+            }
         }
 
         function checkReadyState() {
@@ -4742,6 +5018,10 @@
                     // Update local record
                     record.photoLinks = allLinks.join('|||');
                     record.photoCount = newPhotoCount;
+
+                    // Refresh photo display
+                    loadExistingPhotos(record);
+
                     closePhotoSync();
                 })
                 .catch(error => {
