@@ -1788,7 +1788,19 @@
                         if (config.drive.folderPath) {
                             document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected:</strong> ${config.drive.folderPath}`;
                         } else if (config.drive.folderId) {
-                            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${config.drive.folderId}`;
+                            // Fallback: Show ID initially, then try to fetch name
+                            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${config.drive.folderId} (Loading name...)`;
+
+                            // Try to resolve name
+                            fetchDriveFolderName(config.drive.folderId).then(name => {
+                                if (name) {
+                                    config.drive.folderPath = name; // Update config with resolved name
+                                    saveConfig();
+                                    document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected:</strong> ${name}`;
+                                } else {
+                                    document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${config.drive.folderId}`;
+                                }
+                            });
                         }
 
                         checkReadyState();
@@ -2611,6 +2623,24 @@
                 console.error('Error listing Drive folders:', error);
                 listContainer.innerHTML = `<p style="color: red; text-align: center;">Error: ${error.message}</p>`;
             }
+        }
+
+        async function fetchDriveFolderName(folderId) {
+            if (folderId === 'root') return 'My Drive';
+            try {
+                const response = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=name`, {
+                    headers: {
+                        'Authorization': `Bearer ${config.drive.token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.name;
+                }
+            } catch (error) {
+                console.error('Error fetching folder name:', error);
+            }
+            return null;
         }
 
         function selectCurrentDriveFolder() {
