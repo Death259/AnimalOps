@@ -1555,6 +1555,32 @@
             </div>
         </div>
     </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Drive Folder Picker Modal -->
+    <div class="modal" id="driveFolderPickerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Select a Folder</h2>
+                <button class="close-modal" onclick="closeDriveFolderPicker()">×</button>
+            </div>
+
+            <div id="driveFolderPickerContent" style="padding: 1rem;">
+                <div id="driveBreadcrumb"
+                    style="margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 4px; font-size: 0.9rem;">
+                    <strong>Current:</strong> <span id="currentDrivePath">My Drive</span>
+                </div>
+                <div id="driveFolderList"></div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+                    <button class="btn btn-primary" onclick="selectCurrentDriveFolder()" style="width: 100%;">
+                        <span>✓ Use This Folder</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <footer>
         <p>AnimalOps © 2026 - Built for animal rescue organizations with ❤️</p>
     </footer>
@@ -1564,7 +1590,7 @@
         const OAUTH_CONFIG = {
             clientId: '365835275822-kpaa6kkf6dc1t51ep91eaon04eave6eh.apps.googleusercontent.com',
             redirectUri: 'https://death259.github.io/AnimalOps/',
-            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.metadata.readonly',
+            scopes: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file',
             authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth'
         };
 
