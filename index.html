@@ -1756,12 +1756,45 @@
                         document.getElementById('onedriveStatus').textContent = 'Connected';
                         document.getElementById('onedriveStatus').className = 'status-badge connected';
                         document.getElementById('onedriveConfig').classList.add('connected');
-                        document.getElementById('onedriveConnectionInfo').style.display = 'block'; // Ensure this exists in HTML or handled
+                        document.getElementById('onedriveConnectionInfo').style.display = 'block';
+
+                        if (config.onedrive.folder) {
+                            document.getElementById('selectedOneDriveFolder').innerHTML = `<strong>Selected:</strong> ${config.onedrive.folder}`;
+                        }
 
                         checkReadyState();
                     }
                 } catch (e) {
                     console.error('Error loading saved OneDrive config:', e);
+                }
+            }
+
+            // Load saved Drive config
+            const savedDrive = localStorage.getItem('animalops_drive_config');
+            if (savedDrive) {
+                try {
+                    const driveConfig = JSON.parse(savedDrive);
+                    config.drive = { ...config.drive, ...driveConfig };
+
+                    if (config.drive.connected && config.drive.token) {
+                        // Update UI
+                        document.getElementById('driveStatus').textContent = 'Connected';
+                        document.getElementById('driveStatus').className = 'status-badge connected';
+                        document.getElementById('driveConfig').classList.add('connected');
+                        document.getElementById('driveConnectionInfo').style.display = 'block';
+                        document.getElementById('driveManualSection').style.display = 'none';
+
+                        // Show selected folder
+                        if (config.drive.folderPath) {
+                            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected:</strong> ${config.drive.folderPath}`;
+                        } else if (config.drive.folderId) {
+                            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${config.drive.folderId}`;
+                        }
+
+                        checkReadyState();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved Drive config:', e);
                 }
             }
         }
@@ -1770,6 +1803,7 @@
             localStorage.setItem('animalops_sheets_config', JSON.stringify(config.sheets));
             localStorage.setItem('animalops_dropbox_config', JSON.stringify(config.dropbox));
             localStorage.setItem('animalops_onedrive_config', JSON.stringify(config.onedrive));
+            localStorage.setItem('animalops_drive_config', JSON.stringify(config.drive));
         }
 
         async function signInWithGoogle() {
@@ -2580,13 +2614,12 @@
         }
 
         function selectCurrentDriveFolder() {
-            // Save selected folder ID
+            // Save selected folder ID and Path
             config.drive.folderId = currentDriveId;
+            config.drive.folderPath = currentDrivePathName;
 
             // Update UI
-            // We use the ID for the actual logic, but show the "Breadcrumb" name or just ID?
-            // Existing logic uses config.drive.folderId
-            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${currentDriveId === 'root' ? 'My Drive (Root)' : currentDriveId}`;
+            document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected:</strong> ${currentDrivePathName}`;
 
             closeDriveFolderPicker();
             saveConfig();
