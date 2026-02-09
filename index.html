@@ -1879,10 +1879,31 @@
                         config.sheets.spreadsheetId = null; // Will be set when user picks
                         config.sheets.userEmail = userInfo.email;
 
-                        // Also connect Drive (Unified Login)
-                        config.drive.connected = true;
+                        // Drive Logic:
+                        // Only auto-connect Drive if:
+                        // 1. No other provider is connected
+                        // 2. OR Drive was already connected/selected
+                        const otherProviderConnected = config.dropbox.connected || config.onedrive.connected;
+
+                        // Always update the token just in case they switch later
                         config.drive.token = accessToken;
-                        config.drive.folderId = null; // Reset folder to ensure they pick/create one
+
+                        if (!otherProviderConnected || config.drive.connected) {
+                            config.drive.connected = true;
+                            config.drive.folderId = null; // Reset folder to ensure they pick/create one
+
+                            // Update UI - Drive
+                            document.getElementById('driveStatus').textContent = 'Connected';
+                            document.getElementById('driveStatus').className = 'status-badge connected';
+                            document.getElementById('driveConfig').classList.add('connected');
+                            document.getElementById('driveConnectionInfo').style.display = 'block';
+                            // Hide manual input if it was showing
+                            document.getElementById('driveManualSection').style.display = 'none';
+
+                            // Disconnect others to ensure exclusive photo storage
+                            if (config.dropbox.connected) disconnectDropbox();
+                            if (config.onedrive.connected) disconnectOneDrive();
+                        }
 
                         saveConfig();
 
@@ -1892,18 +1913,6 @@
                         document.getElementById('sheetsConfig').classList.add('connected');
                         document.getElementById('sheetsConnectionInfo').style.display = 'block';
                         document.getElementById('sheetsUserEmail').textContent = userInfo.email;
-
-                        // Update UI - Drive
-                        document.getElementById('driveStatus').textContent = 'Connected';
-                        document.getElementById('driveStatus').className = 'status-badge connected';
-                        document.getElementById('driveConfig').classList.add('connected');
-                        document.getElementById('driveConnectionInfo').style.display = 'block';
-                        // Hide manual input if it was showing
-                        document.getElementById('driveManualSection').style.display = 'none';
-
-                        // Disconnect others to ensure exclusive photo storage
-                        if (config.dropbox.connected) disconnectDropbox();
-                        if (config.onedrive.connected) disconnectOneDrive();
 
                         checkReadyState();
 
