@@ -1294,19 +1294,22 @@
                 <textarea id="behaviorNotes" placeholder="Temperament, behavioral observations..."></textarea>
 
                 <label>Photos</label>
-                <div class="photo-controls">
-                    <button type="button" class="btn btn-outline" onclick="openCamera()">
-                        <span>📷 Take Photo</span>
-                    </button>
-                    <button type="button" class="btn btn-outline" onclick="document.getElementById('photos').click()">
-                        <span>📁 Upload Photos</span>
-                    </button>
-                    <button type="button" class="btn btn-outline" id="syncPhotosBtn" onclick="syncPhotosFromCloud()"
-                        style="display: none;">
-                        <span>🔄 Sync Photos from Cloud</span>
-                    </button>
+                <div id="photoDropZone">
+                    <div class="photo-controls">
+                        <button type="button" class="btn btn-outline" onclick="openCamera()">
+                            <span>📷 Take Photo</span>
+                        </button>
+                        <button type="button" class="btn btn-outline"
+                            onclick="document.getElementById('photos').click()">
+                            <span>📁 Upload Photos</span>
+                        </button>
+                        <button type="button" class="btn btn-outline" id="syncPhotosBtn" onclick="syncPhotosFromCloud()"
+                            style="display: none;">
+                            <span>🔄 Sync Photos from Cloud</span>
+                        </button>
+                    </div>
+                    <input type="file" id="photos" accept="image/*" multiple style="display: none;">
                 </div>
-                <input type="file" id="photos" accept="image/*" multiple style="display: none;">
 
                 <!-- Camera Modal -->
                 <div id="cameraModal" class="modal" style="display: none;">
@@ -4193,13 +4196,67 @@
         // Photo handling
         function handlePhotoSelection(event) {
             const files = Array.from(event.target.files);
-            // Add new files to existing photos instead of replacing
-            selectedPhotos.push(...files);
-            updatePhotoPreview();
+            addPhotosToPreview(files);
 
             // Clear the file input so same file can be selected again
             event.target.value = '';
         }
+
+        function addPhotosToPreview(files) {
+            // Filter for images only
+            const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+            if (imageFiles.length === 0 && files.length > 0) {
+                alert('Please drop image files only.');
+                return;
+            }
+
+            // Add new files to existing photos
+            selectedPhotos.push(...imageFiles);
+            updatePhotoPreview();
+        }
+
+        // Drag and Drop Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('photoDropZone');
+
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            // Highlight drop zone
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight(e) {
+                dropZone.classList.add('dragover');
+            }
+
+            function unhighlight(e) {
+                dropZone.classList.remove('dragover');
+            }
+
+            // Handle dropped files
+            dropZone.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = Array.from(dt.files);
+
+                addPhotosToPreview(files);
+            }
+        });
 
         function removePhoto(index) {
             selectedPhotos.splice(index, 1);
