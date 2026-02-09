@@ -1555,8 +1555,8 @@
             </div>
         </div>
     </div>
-            </div>
-        </div>
+    </div>
+    </div>
     </div>
 
     <!-- Google Drive Folder Picker Modal -->
@@ -2504,14 +2504,14 @@
 
             // Update path name for display
             if (folderName) {
-                 if (folderId === 'root') {
+                if (folderId === 'root') {
                     currentDrivePathName = 'My Drive';
                 } else {
                     currentDrivePathName += ' > ' + folderName;
                 }
                 document.getElementById('currentDrivePath').textContent = currentDrivePathName;
             }
-            
+
             currentDriveId = folderId;
 
             try {
@@ -2540,18 +2540,18 @@
                     listContainer.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 1rem;">No subfolders found.</p>';
                     // Don't return, we might want to add "Back to Root" still
                 }
-                
+
                 // Add "Back to Root" button if not at root
                 if (folderId !== 'root') {
-                     const rootBtn = document.createElement('div');
-                     rootBtn.className = 'folder-item';
-                     rootBtn.innerHTML = '<span>📁 <strong>.. (Back to My Drive)</strong></span>';
-                     rootBtn.onclick = () => {
-                         currentDrivePathName = 'My Drive';
-                         document.getElementById('currentDrivePath').textContent = 'My Drive';
-                         listDriveFolders('root');
-                     };
-                     listContainer.appendChild(rootBtn);
+                    const rootBtn = document.createElement('div');
+                    rootBtn.className = 'folder-item';
+                    rootBtn.innerHTML = '<span>📁 <strong>.. (Back to My Drive)</strong></span>';
+                    rootBtn.onclick = () => {
+                        currentDrivePathName = 'My Drive';
+                        document.getElementById('currentDrivePath').textContent = 'My Drive';
+                        listDriveFolders('root');
+                    };
+                    listContainer.appendChild(rootBtn);
                 }
 
                 if (folders) {
@@ -2560,7 +2560,7 @@
                         div.className = 'folder-item';
                         div.style.cssText = 'padding: 0.75rem; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center;';
                         div.innerHTML = `<span>📁 ${folder.name}</span>`;
-                        
+
                         // Hover effect
                         div.onmouseover = () => div.style.backgroundColor = 'var(--bg-light)';
                         div.onmouseout = () => div.style.backgroundColor = 'transparent';
@@ -2568,7 +2568,7 @@
                         div.onclick = () => {
                             listDriveFolders(folder.id, folder.name);
                         };
-                        
+
                         listContainer.appendChild(div);
                     });
                 }
@@ -2582,12 +2582,12 @@
         function selectCurrentDriveFolder() {
             // Save selected folder ID
             config.drive.folderId = currentDriveId;
-            
+
             // Update UI
             // We use the ID for the actual logic, but show the "Breadcrumb" name or just ID?
             // Existing logic uses config.drive.folderId
             document.getElementById('selectedDriveFolder').innerHTML = `<strong>Selected ID:</strong> ${currentDriveId === 'root' ? 'My Drive (Root)' : currentDriveId}`;
-            
+
             closeDriveFolderPicker();
             saveConfig();
         }
@@ -3178,12 +3178,26 @@
 
 
         function disconnectGoogleDrive() {
-            config.drive.connected = false;
-            config.drive.token = null;
-            config.drive.folderId = null;
-            document.getElementById('driveStatus').textContent = 'Not Connected';
-            document.getElementById('driveStatus').className = 'status-badge disconnected';
-            document.getElementById('driveConfig').classList.remove('connected');
+            if (confirm('Are you sure you want to disconnect Google Drive?')) {
+                config.drive = {
+                    connected: false,
+                    token: null,
+                    folderId: null
+                };
+
+                document.getElementById('driveStatus').textContent = 'Not Connected';
+                document.getElementById('driveStatus').className = 'status-badge disconnected';
+                document.getElementById('driveConfig').classList.remove('connected');
+                document.getElementById('driveConnectionInfo').style.display = 'none';
+                document.getElementById('driveOAuthSection').querySelector('.button-group').style.display = 'flex';
+
+                // Show manual section toggle link again
+                const manualToggle = document.getElementById('driveManualToggle');
+                if (manualToggle) manualToggle.style.display = 'block';
+
+                checkReadyState();
+                saveConfig();
+            }
         }
 
         function checkReadyState() {
