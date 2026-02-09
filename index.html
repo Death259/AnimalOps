@@ -5018,6 +5018,10 @@
                     // Update local record
                     record.photoLinks = allLinks.join('|||');
                     record.photoCount = newPhotoCount;
+
+                    // Refresh photo display
+                    loadExistingPhotos(record);
+
                     closePhotoSync();
                 })
                 .catch(error => {
