@@ -60,6 +60,36 @@
             height: auto;
         }
 
+        /* Drag and Drop Zone */
+        #photoDropZone {
+            border: 2px dashed #999;
+            /* Darker border */
+            background-color: #f9f9f9;
+            /* Light background */
+            border-radius: 8px;
+            padding: 1.5rem;
+            /* More padding */
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        #photoDropZone.dragover {
+            background-color: rgba(77, 184, 196, 0.1);
+            border-color: var(--accent);
+            transform: scale(1.02);
+        }
+
+        #photoDropZone::after {
+            content: 'Drag & Drop photos here';
+            display: block;
+            margin-top: 0.5rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
 
 
         .header::before {
@@ -1289,7 +1319,6 @@
                 <label for="healthNotes">Health Notes</label>
                 <textarea id="healthNotes"
                     placeholder="Any health concerns, medical history, special needs..."></textarea>
-
                 <label for="behaviorNotes">Behavior Notes</label>
                 <textarea id="behaviorNotes" placeholder="Temperament, behavioral observations..."></textarea>
 
