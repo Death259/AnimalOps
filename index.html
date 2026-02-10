@@ -1951,6 +1951,17 @@
                         // Clean up
                         window.history.replaceState({}, document.title, window.location.pathname);
 
+                        // Attempt to restore session if one exists
+                        setTimeout(() => {
+                            if (typeof restoreFormState === 'function') {
+                                const restored = restoreFormState();
+                                if (restored) {
+                                    // Switch to form view if restored
+                                    if (typeof showForm === 'function') showForm();
+                                }
+                            }
+                        }, 500);
+
                     } catch (error) {
                         console.error('OAuth error:', error);
                         alert(`Failed to connect: ${error.message}`);
@@ -2957,6 +2968,76 @@
             }
         }
 
+        // Form State Management
+        function saveFormState() {
+            const formData = {
+                timestamp: Date.now(),
+                animalName: document.getElementById('animalName').value,
+                species: document.getElementById('species').value,
+                breed: document.getElementById('breed').value,
+                age: document.getElementById('age').value,
+                gender: document.getElementById('gender').value,
+                intakeDate: document.getElementById('intakeDate').value,
+                animalId: document.getElementById('animalId').value,
+                buildingId: document.getElementById('buildingId').value,
+                color: document.getElementById('color').value,
+                bodyConditionScore: document.getElementById('bodyConditionScore').value,
+                foodWaterAvailability: document.getElementById('foodWaterAvailability').value,
+                housingDescription: document.getElementById('housingDescription').value,
+                healthNotes: document.getElementById('healthNotes').value,
+                behaviorNotes: document.getElementById('behaviorNotes').value,
+                // We can't save file inputs, but we can save the internal ID if editing
+                currentEditRow: currentEditRow
+            };
+
+            localStorage.setItem('animalops_form_backup', JSON.stringify(formData));
+            console.log('Form state saved to backup.');
+        }
+
+        function restoreFormState() {
+            const savedState = localStorage.getItem('animalops_form_backup');
+            if (!savedState) return false;
+
+            try {
+                const formData = JSON.parse(savedState);
+
+                // Optional: Check if backup is too old (e.g., > 24 hours)? 
+                // For now, we'll just restore it.
+
+                document.getElementById('animalName').value = formData.animalName || '';
+                document.getElementById('species').value = formData.species || '';
+                document.getElementById('breed').value = formData.breed || '';
+                document.getElementById('age').value = formData.age || '';
+                document.getElementById('gender').value = formData.gender || '';
+                document.getElementById('intakeDate').value = formData.intakeDate || '';
+                document.getElementById('animalId').value = formData.animalId || '';
+                document.getElementById('buildingId').value = formData.buildingId || '';
+                document.getElementById('color').value = formData.color || '';
+                document.getElementById('bodyConditionScore').value = formData.bodyConditionScore || '';
+                document.getElementById('foodWaterAvailability').value = formData.foodWaterAvailability || '';
+                document.getElementById('housingDescription').value = formData.housingDescription || '';
+                document.getElementById('healthNotes').value = formData.healthNotes || '';
+                document.getElementById('behaviorNotes').value = formData.behaviorNotes || '';
+
+                if (formData.currentEditRow !== undefined) {
+                    currentEditRow = formData.currentEditRow;
+                    document.getElementById('formTitle').textContent = 'Edit Animal Record';
+                    document.getElementById('submitBtn').innerHTML = '<span>💾 Update Animal Record</span>';
+                    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+                }
+
+                // Notify user
+                alert('Your previous session has been restored.\n\nNOTE: For security reasons, you must re-select any photos you were uploading.');
+
+                // Clear backup after successful restore
+                localStorage.removeItem('animalops_form_backup');
+                return true;
+            } catch (e) {
+                console.error('Failed to restore form state:', e);
+                return false;
+            }
+        }
+
         // Token expiration handling
         async function handleGoogleSheetsError(error, response) {
             // Check if error is due to expired/invalid token
@@ -2979,6 +3060,11 @@
                     // Token has expired and couldn't refresh
                     const spreadsheetId = config.sheets.spreadsheetId;
 
+                    // SAVE STATE BEFORE DISCONNECTING
+                    if (typeof saveFormState === 'function') {
+                        saveFormState();
+                    }
+
                     // Disconnect
                     config.sheets.connected = false;
                     config.sheets.token = null;
@@ -2988,7 +3074,8 @@
                     // Show helpful message
                     const shouldRefresh = confirm(
                         'Your Google Sheets access has expired.\n\n' +
-                        'Click OK to go to the Configuration page and sign in again.\n\n' +
+                        'We have saved your current form data.\n' +
+                        'Click OK to go to the Configuration page and sign in again to restore your session.\n\n' +
                         'Your Spreadsheet ID has been saved.'
                     );
 
