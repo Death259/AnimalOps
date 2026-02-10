@@ -1952,9 +1952,9 @@
                         window.history.replaceState({}, document.title, window.location.pathname);
 
                         // Attempt to restore session if one exists
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             if (typeof restoreFormState === 'function') {
-                                const restored = restoreFormState();
+                                const restored = await restoreFormState();
                                 if (restored) {
                                     // Switch to form view if restored
                                     if (typeof showForm === 'function') showForm();
@@ -2969,7 +2969,78 @@
         }
 
         // Form State Management
-        function saveFormState() {
+        const PhotoStorage = {
+            dbName: 'AnimalOpsPhotos',
+            storeName: 'photos',
+            dbVersion: 1,
+
+            async open() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.dbVersion);
+                    request.onerror = event => reject('IndexedDB error: ' + event.target.error);
+                    request.onsuccess = event => resolve(event.target.result);
+                    request.onupgradeneeded = event => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains(this.storeName)) {
+                            db.createObjectStore(this.storeName, { keyPath: 'id', autoIncrement: true });
+                        }
+                    };
+                });
+            },
+
+            async savePhotos(photos) {
+                if (!photos || photos.length === 0) return;
+                const db = await this.open();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([this.storeName], 'readwrite');
+                    const store = transaction.objectStore(this.storeName);
+                    store.clear(); // Clear old backup
+
+                    let completed = 0;
+                    if (photos.length === 0) {
+                        resolve();
+                        return;
+                    }
+
+                    photos.forEach(file => {
+                        const request = store.add({
+                            name: file.name,
+                            type: file.type,
+                            lastModified: file.lastModified,
+                            content: file
+                        });
+                        request.onsuccess = () => {
+                            completed++;
+                            if (completed === photos.length) resolve();
+                        };
+                        request.onerror = (e) => reject(e);
+                    });
+                });
+            },
+
+            async getPhotos() {
+                const db = await this.open();
+                return new Promise((resolve, reject) => {
+                    const transaction = db.transaction([this.storeName], 'readonly');
+                    const store = transaction.objectStore(this.storeName);
+                    const request = store.getAll();
+
+                    request.onsuccess = () => {
+                        const results = request.result;
+                        const files = results.map(item => {
+                            return new File([item.content], item.name, {
+                                type: item.type,
+                                lastModified: item.lastModified
+                            });
+                        });
+                        resolve(files);
+                    };
+                    request.onerror = (e) => reject(e);
+                });
+            }
+        };
+
+        async function saveFormState() {
             const formData = {
                 timestamp: Date.now(),
                 animalName: document.getElementById('animalName').value,
@@ -3062,7 +3133,7 @@
 
                     // SAVE STATE BEFORE DISCONNECTING
                     if (typeof saveFormState === 'function') {
-                        saveFormState();
+                        await saveFormState();
                     }
 
                     // Disconnect
