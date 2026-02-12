@@ -4018,7 +4018,7 @@
             printContainer.innerHTML = pagesHTML;
 
             // Wait for ALL images to fully load before printing
-            const images = printContainer.querySelectorAll('img');
+            const images = Array.from(printContainer.querySelectorAll('img'));
             const totalImages = images.length;
 
             if (totalImages === 0) {
@@ -4051,64 +4051,79 @@
                 const progressBar = document.getElementById('printProgressBar');
                 if (progressText) progressText.textContent = loadedCount;
                 if (progressBar) progressBar.style.width = `${(loadedCount / totalImages) * 100}%`;
-
-                if (loadedCount === totalImages) {
-                    // All images loaded - wait a bit more then print
-                    setTimeout(() => {
-                        progressDiv.remove();
-                        window.print();
-                        setTimeout(() => {
-                            printContainer.style.display = 'none';
-                            printContainer.innerHTML = '';
-                        }, 1000);
-                    }, 500);
-                }
             };
 
-            // Set up load handlers for each image
-            const loadPromises = [];
-            images.forEach(img => {
-                const promise = new Promise((resolve, reject) => {
-                    if (img.complete && img.naturalHeight !== 0) {
-                        // Already loaded
+            // Create a promise for each image
+            const imagePromises = images.map(img => {
+                return new Promise(resolve => {
+                    // Check if already complete
+                    if (img.complete && img.naturalHeight !== 0 && img.getAttribute('src')) {
                         updateProgress();
                         resolve();
-                    } else {
-                        img.onload = () => {
-                            updateProgress();
-                            resolve();
-                        };
-                        img.onerror = () => {
-                            console.error('Failed to load image:', img.src);
-                            updateProgress(); // Count failed images too
-                            resolve(); // Don't reject, just continue
-                        };
-
-                        // Timeout after 30 seconds per image
-                        setTimeout(() => {
-                            if (!img.complete) {
-                                console.error('Image load timeout:', img.src);
-                                updateProgress();
-                                resolve();
-                            }
-                        }, 30000);
+                        return;
                     }
+
+                    // Define handlers
+                    const onLoad = () => {
+                        updateProgress();
+                        cleanup();
+                        resolve();
+                    };
+
+                    const onError = () => {
+                        console.warn('Failed to load image for print:', img.src);
+                        updateProgress();
+                        cleanup();
+                        resolve(); // Resolve anyway so we don't block printing
+                    };
+
+                    const cleanup = () => {
+                        img.removeEventListener('load', onLoad);
+                        img.removeEventListener('error', onError);
+                    };
+
+                    // Attach listeners
+                    img.addEventListener('load', onLoad);
+                    img.addEventListener('error', onError);
+
+                    // Force retry if empty src (shouldn't happen with our logic but safe)
+                    if (!img.getAttribute('src')) {
+                        onError();
+                        return;
+                    }
+
+                    // Strict timeout: If image takes > 30s, give up on it
+                    setTimeout(() => {
+                        if (!img.complete) {
+                            console.warn('Print image load timeout:', img.src);
+                            // Don't call updateProgress here to avoid double-counting if it loads later
+                            // But we MUST resolve to unblock the print
+                            cleanup();
+                            // If we haven't resolved yet, we should (Promise ensures single resolution)
+                            resolve();
+                            // Manually update progress for visual feedback? 
+                            // Easier to just let the progress bar lag if it times out
+                        }
+                    }, 30000);
                 });
-                loadPromises.push(promise);
             });
 
-            // Fallback: If something goes wrong, show print after 2 minutes
-            setTimeout(() => {
-                if (document.body.contains(progressDiv)) {
+            // Wait for ALL images (or timeouts)
+            Promise.all(imagePromises).then(() => {
+                // Short delay to ensure rendering is complete
+                setTimeout(() => {
                     progressDiv.remove();
-                    alert('Some images took too long to load. Printing with available images.');
                     window.print();
+
+                    // Cleanup after print dialog closes
+                    // Note: window.print() blocks on many browsers, so this runs after
+                    // For those where it doesn't block, the user sees the page behind the dialog
                     setTimeout(() => {
                         printContainer.style.display = 'none';
                         printContainer.innerHTML = '';
                     }, 1000);
-                }
-            }, 120000); // 2 minute timeout
+                }, 500);
+            });
         }
 
         async function editRecord(rowIndex) {
