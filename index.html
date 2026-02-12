@@ -3936,14 +3936,40 @@
             }
 
             const printContainer = document.getElementById('printContainer');
+
+            // Setup Print Preview UI
+            printContainer.className = 'print-preview-overlay';
             printContainer.style.display = 'block';
             printContainer.innerHTML = `
-                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000;">
-                    <h3 style="margin-bottom: 1rem;">Generating Print Layout...</h3>
-                    <p>Resolving image links for ${recordsToPrint.length} records.</p>
-                    <div class="loading-spinner" style="margin: 1rem auto;"></div>
+                <div class="print-controls">
+                    <div class="print-status">
+                        <span id="printStatusIcon">⏳</span>
+                        <span id="printStatusText">Preparing ${recordsToPrint.length} record(s)...</span>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <button id="closePrintBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;">Close</button>
+                        <button id="doPrintBtn" class="btn" style="padding: 0.5rem 1rem;" disabled>Print</button>
+                    </div>
+                </div>
+                <div id="printContent" class="print-preview-content">
+                    <div style="text-align: center; padding: 4rem;">
+                        <div class="loading-spinner" style="margin: 0 auto 1rem auto;"></div>
+                        <h3>Resolving image links...</h3>
+                    </div>
                 </div>
             `;
+
+            // Close button handler
+            document.getElementById('closePrintBtn').onclick = () => {
+                printContainer.style.display = 'none';
+                printContainer.innerHTML = '';
+                printContainer.className = ''; // Reset class
+            };
+
+            // Print button handler
+            document.getElementById('doPrintBtn').onclick = () => {
+                window.print();
+            };
 
             // Helper to resolve a single photo URL
             const resolvePhotoUrl = async (photoUrl) => {
@@ -4123,42 +4149,28 @@
 
             // Wait for all records to be generated
             const pagesHTMLArr = await Promise.all(recordPromises);
-            printContainer.innerHTML = pagesHTMLArr.join('');
+            document.getElementById('printContent').innerHTML = pagesHTMLArr.join('');
 
-            // Wait for ALL images to fully load before printing
-            const images = Array.from(printContainer.querySelectorAll('img'));
+            // Wait for ALL images to fully load before enabling print
+            const images = Array.from(document.getElementById('printContent').querySelectorAll('img'));
             const totalImages = images.length;
 
             if (totalImages === 0) {
-                // No images to load, print immediately
-                window.print();
-                setTimeout(() => {
-                    printContainer.style.display = 'none';
-                    printContainer.innerHTML = '';
-                }, 1000);
+                // No images to load, enable print immediately
+                document.getElementById('printStatusIcon').textContent = '✅';
+                document.getElementById('printStatusText').textContent = 'Ready to Print';
+                document.getElementById('doPrintBtn').removeAttribute('disabled');
                 return;
             }
 
-            // Show progress indicator
-            const progressDiv = document.createElement('div');
-            progressDiv.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000; text-align: center;';
-            progressDiv.innerHTML = `
-                <h3 style="margin: 0 0 1rem 0;">Preparing Print Document</h3>
-                <p style="margin: 0 0 0.5rem 0;">Loading images: <span id="printProgress">0</span> / ${totalImages}</p>
-                <div style="width: 300px; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden;">
-                    <div id="printProgressBar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
-                </div>
-                <p style="margin: 1rem 0 0 0; color: var(--text-light); font-size: 0.9rem;">Please wait... This may take a while for many photos.</p>
-            `;
-            document.body.appendChild(progressDiv);
+            // Update status
+            document.getElementById('printStatusText').textContent = `Loading images: 0 / ${totalImages}`;
 
             let loadedCount = 0;
             const updateProgress = () => {
                 loadedCount++;
-                const progressText = document.getElementById('printProgress');
-                const progressBar = document.getElementById('printProgressBar');
-                if (progressText) progressText.textContent = loadedCount;
-                if (progressBar) progressBar.style.width = `${(loadedCount / totalImages) * 100}%`;
+                const statusText = document.getElementById('printStatusText');
+                if (statusText) statusText.textContent = `Loading images: ${loadedCount} / ${totalImages}`;
             };
 
             // Create a promise for each image
@@ -4182,7 +4194,7 @@
                         console.warn('Failed to load image for print:', img.src);
                         updateProgress();
                         cleanup();
-                        resolve(); // Resolve anyway so we don't block printing
+                        resolve(); // Resolve anyway
                     };
 
                     const cleanup = () => {
@@ -4194,23 +4206,18 @@
                     img.addEventListener('load', onLoad);
                     img.addEventListener('error', onError);
 
-                    // Force retry if empty src (shouldn't happen with our logic but safe)
+                    // Force retry if empty src
                     if (!img.getAttribute('src')) {
                         onError();
                         return;
                     }
 
-                    // Strict timeout: If image takes > 30s, give up on it
+                    // Strict timeout
                     setTimeout(() => {
                         if (!img.complete) {
                             console.warn('Print image load timeout:', img.src);
-                            // Don't call updateProgress here to avoid double-counting if it loads later
-                            // But we MUST resolve to unblock the print
                             cleanup();
-                            // If we haven't resolved yet, we should (Promise ensures single resolution)
                             resolve();
-                            // Manually update progress for visual feedback? 
-                            // Easier to just let the progress bar lag if it times out
                         }
                     }, 30000);
                 });
@@ -4218,26 +4225,18 @@
 
             // Wait for ALL images (or timeouts)
             Promise.all(imagePromises).then(() => {
-                // All images resolved.
-                if (progressDiv && document.body.contains(progressDiv)) {
-                    progressDiv.innerHTML = `
-                        <h3 style="margin: 0 0 1rem 0;">Rendering...</h3>
-                        <p>Finalizing layout for print.</p>
-                        <div class="loading-spinner" style="margin: 1rem auto;"></div>
-                    `;
-                }
+                const statusText = document.getElementById('printStatusText');
+                const statusIcon = document.getElementById('printStatusIcon');
+                const printBtn = document.getElementById('doPrintBtn');
+
+                if (statusText) statusText.textContent = 'Rendering...';
 
                 // Short delay to ensure rendering is complete (decoding, layout)
                 setTimeout(() => {
-                    if (progressDiv && document.body.contains(progressDiv)) progressDiv.remove();
-                    window.print();
-
-                    // Cleanup after print dialog closes
-                    setTimeout(() => {
-                        printContainer.style.display = 'none';
-                        printContainer.innerHTML = '';
-                    }, 1000);
-                }, 2000); // Increased to 2sec for safety
+                    if (statusText) statusText.textContent = 'Ready to Print';
+                    if (statusIcon) statusIcon.textContent = '✅';
+                    if (printBtn) printBtn.removeAttribute('disabled');
+                }, 2000);
             });
         }
 
