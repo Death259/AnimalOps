@@ -829,9 +829,84 @@
             max-height: 1.5in;
         }
 
+        /* Print Preview */
+        .print-preview-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #f5f5f5;
+            z-index: 9999;
+            overflow-y: auto;
+            padding-top: 80px;
+            /* Space for controls */
+            display: none;
+        }
+
+        .print-preview-content {
+            width: 210mm;
+            /* A4 width */
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 1cm;
+            /* Default padding for preview */
+            min-height: 297mm;
+            /* A4 height */
+        }
+
+        .print-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 70px;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            z-index: 10000;
+        }
+
+        .print-status {
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
         @media print {
+            .print-preview-overlay {
+                position: static;
+                width: auto;
+                height: auto;
+                background: none;
+                overflow: visible;
+                display: block !important;
+                padding: 0;
+            }
+
+            .print-preview-content {
+                width: auto;
+                margin: 0;
+                box-shadow: none;
+                padding: 0;
+            }
+
+            .print-controls {
+                display: none !important;
+            }
+
             body * {
                 visibility: hidden;
+            }
+
+            #printContainer,
+            #printContainer * {
+                visibility: visible;
             }
 
             #printContainer,
@@ -3862,15 +3937,65 @@
 
             const printContainer = document.getElementById('printContainer');
             printContainer.style.display = 'block';
-            printContainer.innerHTML = `<p style="text-align: center; padding: 2rem;">Preparing ${recordsToPrint.length} record(s) with ${totalPhotos} photo(s)...<br><small>Please wait, this may take a while.</small></p>`;
+            printContainer.innerHTML = `
+                <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 10000;">
+                    <h3 style="margin-bottom: 1rem;">Generating Print Layout...</h3>
+                    <p>Resolving image links for ${recordsToPrint.length} records.</p>
+                    <div class="loading-spinner" style="margin: 1rem auto;"></div>
+                </div>
+            `;
 
-            let pagesHTML = '';
+            // Helper to resolve a single photo URL
+            const resolvePhotoUrl = async (photoUrl) => {
+                if (!photoUrl) return null;
 
-            for (const record of recordsToPrint) {
-                // Create cover page for this animal - Animal ID as header, Name in details
-                pagesHTML += `
+                // Handle Dropbox paths - fetch temporary link
+                if (photoUrl.startsWith('DROPBOX:')) {
+                    const dropboxPath = photoUrl.replace('DROPBOX:', '');
+                    try {
+                        const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${config.dropbox.token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ path: dropboxPath })
+                        });
+
+                        if (tempLinkResponse.ok) {
+                            const tempLinkData = await tempLinkResponse.json();
+                            return tempLinkData.link;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching Dropbox temp link:', error);
+                        return null; // Failed link
+                    }
+                }
+
+                // Convert regular Dropbox URLs
+                if (photoUrl.includes('dropbox.com')) {
+                    let url = photoUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
+                    url = url.replace('?dl=0', '').replace('?dl=1', '');
+                    return url;
+                }
+
+                // Convert OneDrive share links
+                if (photoUrl.includes('1drv.ms') || photoUrl.includes('onedrive.live.com')) {
+                    if (photoUrl.includes('?')) {
+                        return photoUrl + '&download=1';
+                    }
+                }
+
+                return photoUrl;
+            };
+
+            // Generate HTML for all records in parallel
+            const recordPromises = recordsToPrint.map(async (record) => {
+                let pagesHTML = `
                     <div class="print-page print-cover">
-                        <h1>${record.animalId || 'No ID'}</h1>
+                        <div class="header-logo">
+                            <h1>🐾 AnimalOps Record</h1>
+                        </div>
                         
                         <div class="print-info-grid">
                             <div class="print-info-item">
@@ -3881,6 +4006,11 @@
                             <div class="print-info-item">
                                 <div class="print-info-label">Species</div>
                                 <div class="print-info-value">${record.species || 'N/A'}</div>
+                            </div>
+                            
+                            <div class="print-info-item">
+                                <div class="print-info-label">ID</div>
+                                <div class="print-info-value">${record.animalId || 'N/A'}</div>
                             </div>
                             
                             <div class="print-info-item">
@@ -3952,59 +4082,33 @@
 
                 // Add photo pages if there are photos
                 if (record.photoLinks && record.photoLinks.trim()) {
-                    const photoUrls = record.photoLinks.split('|||').filter(url => url);
+                    const rawUrls = record.photoLinks.split('|||').filter(url => url);
 
-                    for (let i = 0; i < photoUrls.length; i++) {
-                        let photoUrl = photoUrls[i];
+                    // Resolve all URLs for this record in parallel
+                    const photoUrls = await Promise.all(rawUrls.map(url => resolvePhotoUrl(url)));
 
-                        // Handle Dropbox paths - fetch temporary link
-                        if (photoUrl.startsWith('DROPBOX:')) {
-                            const dropboxPath = photoUrl.replace('DROPBOX:', '');
-                            try {
-                                const tempLinkResponse = await fetch('https://api.dropboxapi.com/2/files/get_temporary_link', {
-                                    method: 'POST',
-                                    headers: {
-                                        'Authorization': `Bearer ${config.dropbox.token}`,
-                                        'Content-Type': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        path: dropboxPath
-                                    })
-                                });
-
-                                if (tempLinkResponse.ok) {
-                                    const tempLinkData = await tempLinkResponse.json();
-                                    photoUrl = tempLinkData.link;
-                                }
-                            } catch (error) {
-                                console.error('Error fetching Dropbox temp link:', error);
-                            }
-                        }
-                        // Convert regular Dropbox URLs
-                        else if (photoUrl.includes('dropbox.com')) {
-                            photoUrl = photoUrl.replace('www.dropbox.com', 'dl.dropboxusercontent.com');
-                            photoUrl = photoUrl.replace('?dl=0', '');
-                            photoUrl = photoUrl.replace('?dl=1', '');
-                        }
-
-                        // Convert OneDrive share links
-                        if (photoUrl.includes('1drv.ms') || photoUrl.includes('onedrive.live.com')) {
-                            if (photoUrl.includes('?')) {
-                                photoUrl = photoUrl + '&download=1';
-                            }
-                        }
-
-                        pagesHTML += `
-                            <div class="print-page print-photo-page">
-                                <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}" data-photo-index="${i}">
-                                <div class="print-photo-caption">
-                                    ${record.animalId} - Photo ${i + 1} of ${photoUrls.length}
+                    photoUrls.forEach((photoUrl, i) => {
+                        if (photoUrl) {
+                            pagesHTML += `
+                                <div class="print-page print-photo-page">
+                                    <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}" data-photo-index="${i}">
+                                    <div class="print-photo-caption">
+                                        ${record.animalId} - Photo ${i + 1} of ${rawUrls.length}
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                    }
+                            `;
+                        } else {
+                            // Link failed to resolve
+                            pagesHTML += `
+                                <div class="print-page print-photo-page">
+                                    <div class="print-photo-caption" style="color: red;">
+                                        Failed to load photo ${i + 1}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    });
                 } else {
-                    // Add a note if no photos
                     pagesHTML += `
                         <div class="print-page print-photo-page">
                             <div class="print-photo-caption" style="font-size: 1.5rem; color: var(--text-light);">
@@ -4013,9 +4117,13 @@
                         </div>
                     `;
                 }
-            }
 
-            printContainer.innerHTML = pagesHTML;
+                return pagesHTML;
+            });
+
+            // Wait for all records to be generated
+            const pagesHTMLArr = await Promise.all(recordPromises);
+            printContainer.innerHTML = pagesHTMLArr.join('');
 
             // Wait for ALL images to fully load before printing
             const images = Array.from(printContainer.querySelectorAll('img'));
@@ -4110,19 +4218,26 @@
 
             // Wait for ALL images (or timeouts)
             Promise.all(imagePromises).then(() => {
-                // Short delay to ensure rendering is complete
+                // All images resolved.
+                if (progressDiv && document.body.contains(progressDiv)) {
+                    progressDiv.innerHTML = `
+                        <h3 style="margin: 0 0 1rem 0;">Rendering...</h3>
+                        <p>Finalizing layout for print.</p>
+                        <div class="loading-spinner" style="margin: 1rem auto;"></div>
+                    `;
+                }
+
+                // Short delay to ensure rendering is complete (decoding, layout)
                 setTimeout(() => {
-                    progressDiv.remove();
+                    if (progressDiv && document.body.contains(progressDiv)) progressDiv.remove();
                     window.print();
 
                     // Cleanup after print dialog closes
-                    // Note: window.print() blocks on many browsers, so this runs after
-                    // For those where it doesn't block, the user sees the page behind the dialog
                     setTimeout(() => {
                         printContainer.style.display = 'none';
                         printContainer.innerHTML = '';
                     }, 1000);
-                }, 500);
+                }, 2000); // Increased to 2sec for safety
             });
         }
 
