@@ -4157,91 +4157,125 @@
 
             if (totalImages === 0) {
                 // No images to load, enable print immediately
-                document.getElementById('printStatusIcon').textContent = '✅';
-                document.getElementById('printStatusText').textContent = 'Ready to Print';
+                document.getElementById('printStatusIcon').textContent = '';
+                document.getElementById('printStatusText').textContent = 'No images to load.';
                 document.getElementById('doPrintBtn').removeAttribute('disabled');
                 return;
             }
 
             // Update status
-            document.getElementById('printStatusText').textContent = `Loading images: 0 / ${totalImages}`;
-
-            let loadedCount = 0;
-            const updateProgress = () => {
-                loadedCount++;
+            const updateStatus = (loaded, failed) => {
                 const statusText = document.getElementById('printStatusText');
-                if (statusText) statusText.textContent = `Loading images: ${loadedCount} / ${totalImages}`;
+                if (statusText) {
+                    statusText.textContent = `Images: ${loaded} Loaded, ${failed} Failed / ${totalImages} Total`;
+                }
             };
 
-            // Create a promise for each image
+            updateStatus(0, 0);
+
+            // Create a decode promise for each image
+            let loadedCount = 0;
+            let failedCount = 0;
+
             const imagePromises = images.map(img => {
+                // Return a promise that resolves when decoding is complete or fails
                 return new Promise(resolve => {
-                    // Check if already complete
-                    if (img.complete && img.naturalHeight !== 0 && img.getAttribute('src')) {
-                        updateProgress();
-                        resolve();
-                        return;
+                    // Check if already complete and decoded (rare but possible)
+                    if (img.complete && img.naturalHeight !== 0) {
+                        try {
+                            img.decode().then(() => {
+                                loadedCount++;
+                                updateStatus(loadedCount, failedCount);
+                                resolve({ success: true, img });
+                            }).catch(() => {
+                                failedCount++;
+                                updateStatus(loadedCount, failedCount);
+                                img.style.opacity = '0.5'; // Visual indication of failure
+                                resolve({ success: false, img });
+                            });
+                            return;
+                        } catch (e) {
+                            // Fallback if decode() not supported (older browsers)
+                            loadedCount++;
+                            updateStatus(loadedCount, failedCount);
+                            resolve({ success: true, img });
+                            return;
+                        }
                     }
 
                     // Define handlers
-                    const onLoad = () => {
-                        updateProgress();
-                        cleanup();
-                        resolve();
+                    const onDecode = () => {
+                        loadedCount++;
+                        updateStatus(loadedCount, failedCount);
+                        resolve({ success: true, img });
                     };
 
                     const onError = () => {
                         console.warn('Failed to load image for print:', img.src);
-                        updateProgress();
-                        cleanup();
-                        resolve(); // Resolve anyway
+                        failedCount++;
+                        updateStatus(loadedCount, failedCount);
+
+                        img.style.border = '2px solid red';
+                        img.alt = 'Image Load Failed';
+
+                        resolve({ success: false, img });
                     };
 
-                    const cleanup = () => {
-                        img.removeEventListener('load', onLoad);
-                        img.removeEventListener('error', onError);
-                    };
-
-                    // Attach listeners
-                    img.addEventListener('load', onLoad);
-                    img.addEventListener('error', onError);
-
-                    // Force retry if empty src
-                    if (!img.getAttribute('src')) {
-                        onError();
-                        return;
+                    // Use decode() logic
+                    if (img.decode) {
+                        img.decode()
+                            .then(onDecode)
+                            .catch((err) => {
+                                console.warn('Image decode failed:', img.src, err);
+                                onError();
+                            });
+                    } else {
+                        // Fallback for no decode support
+                        if (img.complete) {
+                            onDecode();
+                        } else {
+                            img.onload = onDecode;
+                            img.onerror = onError;
+                        }
                     }
 
-                    // Strict timeout
+                    // Strict timeout: If image takes > 45s, give up on it
                     setTimeout(() => {
-                        if (!img.complete) {
-                            console.warn('Print image load timeout:', img.src);
-                            cleanup();
-                            resolve();
+                        if (loadedCount + failedCount < totalImages) {
+                            // This won't actually resolve the promise if it's pending in decode()
+                            // But mostly helps if browser hangs on decode promise
                         }
-                    }, 30000);
+                    }, 45000);
                 });
             });
 
             // Wait for ALL images (or timeouts)
             Promise.all(imagePromises).then(() => {
-                const statusText = document.getElementById('printStatusText');
                 const statusIcon = document.getElementById('printStatusIcon');
                 const printBtn = document.getElementById('doPrintBtn');
+                const statusText = document.getElementById('printStatusText');
 
-                if (statusText) statusText.textContent = 'Rendering...';
+                // Clear the hourglass icon when done
+                if (statusIcon) statusIcon.textContent = '';
+                // Optional: Update status text to indicate completion without being "Ready to Print"
+                // if (statusText) statusText.textContent = `Done. ${loadedCount} Loaded, ${failedCount} Failed.`;
 
                 // Short delay to ensure rendering is complete (decoding, layout)
                 setTimeout(() => {
-                    if (statusText) statusText.textContent = 'Ready to Print';
-                    if (statusIcon) statusIcon.textContent = '✅';
-                    if (printBtn) printBtn.removeAttribute('disabled');
-                }, 2000);
+                    if (printBtn) {
+                        printBtn.removeAttribute('disabled');
+                        if (failedCount > 0) {
+                            printBtn.classList.add('btn-warning');
+                            printBtn.title = "Some images failed to load";
+                        } else {
+                            printBtn.classList.add('btn-success');
+                        }
+                    }
+                }, 1000);
             });
         }
 
         async function editRecord(rowIndex) {
-            const record = allRecords.find(r => r.rowIndex === rowIndex);
             if (!record) return;
 
             currentEditRow = rowIndex;
