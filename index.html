@@ -3948,6 +3948,7 @@
                     </div>
                     <div style="display: flex; gap: 1rem;">
                         <button id="retryPrintBtn" class="btn btn-outline" style="padding: 0.5rem 1rem; display: none;">🔄 Retry Failures</button>
+                        <button id="exportWordBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;" disabled>📝 Export Word</button>
                         <button id="closePrintBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;">Close</button>
                         <button id="doPrintBtn" class="btn" style="padding: 0.5rem 1rem;" disabled>Print</button>
                     </div>
@@ -3970,6 +3971,107 @@
             // Print button handler
             document.getElementById('doPrintBtn').onclick = () => {
                 window.print();
+            };
+
+            // Export Word Handler
+            document.getElementById('exportWordBtn').onclick = async () => {
+                const btn = document.getElementById('exportWordBtn');
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<div class="loading-spinner" style="width: 1em; height: 1em; border-width: 2px;"></div> Converting...';
+
+                try {
+                    // 1. Clone content specifically for export
+                    const content = document.getElementById('printContent').cloneNode(true);
+
+                    // 2. Convert Images to Base64
+                    const imgs = Array.from(content.querySelectorAll('img'));
+
+                    // Helper to convert image URL to Base64
+                    const toBase64 = async (url) => {
+                        try {
+                            const response = await fetch(url);
+                            const blob = await response.blob();
+                            return new Promise((resolve, reject) => {
+                                const reader = new FileReader();
+                                reader.onloadend = () => resolve(reader.result);
+                                reader.onerror = reject;
+                                reader.readAsDataURL(blob);
+                            });
+                        } catch (e) {
+                            console.warn('Failed to convert image to base64 for export:', url);
+                            return null;
+                        }
+                    };
+
+                    // Process images sequentially or parallel (parallel is faster)
+                    await Promise.all(imgs.map(async (img) => {
+                        // Skip if it failed
+                        if (img.classList.contains('print-image-failed') || !img.src) return;
+
+                        const base64 = await toBase64(img.src);
+                        if (base64) {
+                            img.src = base64;
+                        }
+                    }));
+
+                    // 3. Prepare CSS
+                    // We need to inline some critical styles for Word to render it somewhat correctly
+                    const css = `
+                        <style>
+                            body { font-family: Arial, sans-serif; }
+                            .print-page { page-break-after: always; padding: 20px; }
+                            .print-cover { text-align: center; }
+                            .header-logo h1 { font-size: 24pt; color: #333; }
+                            .print-info-grid { display: block; }
+                            .print-info-item { margin-bottom: 10px; border-bottom: 1px solid #eee; }
+                            .print-info-label { font-weight: bold; color: #666; font-size: 10pt; }
+                            .print-info-value { font-size: 12pt; }
+                            .print-notes { margin-top: 20px; text-align: left; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; }
+                            .print-photo-page { text-align: center; }
+                            .print-photo-page img { max-width: 100%; height: auto; max-height: 800px; }
+                            .print-photo-caption { font-size: 10pt; color: #666; margin-top: 10px; }
+                        </style>
+                    `;
+
+                    // 4. Construct HTML Blob
+                    // Word expects a specific XML namespace wrap for better compatibility
+                    const preHtml = `
+                        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
+                              xmlns:w='urn:schemas-microsoft-com:office:word' 
+                              xmlns='http://www.w3.org/TR/REC-html40'>
+                        <head>
+                            <meta charset='utf-8'>
+                            <title>AnimalOps Export</title>
+                            ${css}
+                        </head>
+                        <body>
+                    `;
+                    const postHtml = `</body></html>`;
+
+                    const fullHtml = preHtml + content.innerHTML + postHtml;
+
+                    const blob = new Blob([fullHtml], { type: 'application/vnd.ms-word' });
+
+                    // 5. Trigger Download
+                    const downloadLink = document.createElement("a");
+                    document.body.appendChild(downloadLink);
+
+                    const url = URL.createObjectURL(blob);
+                    downloadLink.href = url;
+                    downloadLink.download = `AnimalOps_Export_${new Date().toISOString().slice(0, 10)}.doc`;
+                    downloadLink.click();
+
+                    document.body.removeChild(downloadLink);
+                    URL.revokeObjectURL(url);
+
+                } catch (error) {
+                    console.error('Export failed:', error);
+                    alert('Export failed. Check console for details.');
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
             };
 
             // Retry button handler
@@ -4058,13 +4160,17 @@
                 if (statusText) statusText.textContent = `Images: ${loaded} Loaded, ${failed} Failed / ${total} Total`;
 
                 const printBtn = document.getElementById('doPrintBtn');
+                const exportBtn = document.getElementById('exportWordBtn');
+
                 if (failed > 0) {
                     printBtn.classList.remove('btn-success');
                     printBtn.classList.add('btn-warning');
+                    if (exportBtn) exportBtn.classList.add('btn-warning'); // Also warn export button
                     retryBtn.style.display = 'inline-block';
                 } else {
                     printBtn.classList.remove('btn-warning');
                     printBtn.classList.add('btn-success');
+                    if (exportBtn) exportBtn.classList.remove('btn-warning'); // Remove warning if all good
                     retryBtn.style.display = 'none';
                 }
             };
@@ -4120,81 +4226,81 @@
                         <div class="header-logo">
                             <h1>🐾 AnimalOps Record</h1>
                         </div>
-
+                        
                         <div class="print-info-grid">
                             <div class="print-info-item">
                                 <div class="print-info-label">Name</div>
                                 <div class="print-info-value">${record.name || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Species</div>
                                 <div class="print-info-value">${record.species || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">ID</div>
                                 <div class="print-info-value">${record.animalId || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Breed</div>
                                 <div class="print-info-value">${record.breed || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Age</div>
                                 <div class="print-info-value">${record.age || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Gender</div>
                                 <div class="print-info-value">${record.gender || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Intake Date</div>
                                 <div class="print-info-value">${record.intakeDate || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Building ID</div>
                                 <div class="print-info-value">${record.buildingId || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Color</div>
                                 <div class="print-info-value">${record.color || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Body Condition Score</div>
                                 <div class="print-info-value">${record.bodyConditionScore || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Food and Water Availability</div>
                                 <div class="print-info-value">${record.foodWaterAvailability || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Housing Description</div>
                                 <div class="print-info-value">${record.housingDescription || 'N/A'}</div>
                             </div>
-
+                            
                             <div class="print-info-item">
                                 <div class="print-info-label">Number of Photos</div>
                                 <div class="print-info-value">${record.photoCount || '0'}</div>
                             </div>
                         </div>
-
+                        
                         ${record.healthNotes ? `
                             <div class="print-notes">
                                 <h3>Health Notes</h3>
                                 <p>${record.healthNotes}</p>
                             </div>
                         ` : ''}
-
+                        
                         ${record.behaviorNotes ? `
                             <div class="print-notes">
                                 <h3>Behavior Notes</h3>
@@ -4268,6 +4374,10 @@
                 document.getElementById('printStatusIcon').textContent = '';
                 document.getElementById('printStatusText').textContent = 'No images to load.';
                 document.getElementById('doPrintBtn').removeAttribute('disabled');
+
+                // Also enable Export button
+                document.getElementById('exportWordBtn').removeAttribute('disabled');
+
                 return;
             }
 
@@ -4378,6 +4488,7 @@
                 const statusIcon = document.getElementById('printStatusIcon');
                 const printBtn = document.getElementById('doPrintBtn');
                 const retryBtn = document.getElementById('retryPrintBtn');
+                const exportBtn = document.getElementById('exportWordBtn');
                 const statusText = document.getElementById('printStatusText');
 
                 // Clear the hourglass icon when done
@@ -4389,6 +4500,8 @@
                 setTimeout(() => {
                     if (printBtn) {
                         printBtn.removeAttribute('disabled');
+                        if (exportBtn) exportBtn.removeAttribute('disabled');
+
                         if (failedCount > 0) {
                             printBtn.classList.add('btn-warning');
                             printBtn.title = "Some images failed to load";
@@ -4403,6 +4516,7 @@
         }
 
         async function editRecord(rowIndex) {
+            const record = globalAnimalRecords[rowIndex];
             if (!record) return;
 
             currentEditRow = rowIndex;
