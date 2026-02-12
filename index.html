@@ -1691,7 +1691,7 @@
     </div>
     <footer>
         <p>AnimalOps © 2026 - Built for animal rescue organizations with ❤️</p>
-        <p style="font-size: 0.8rem; color: #888; margin-top: 0.5rem;">Last Modified: 2026-02-12 00:30:00</p>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 0.5rem;">Last Modified: 2026-02-12 00:46:00</p>
     </footer>
 
     <script>
@@ -3950,7 +3950,6 @@
                     </div>
                     <div style="display: flex; gap: 1rem;">
                         <button id="retryPrintBtn" class="btn btn-outline" style="padding: 0.5rem 1rem; display: none;">🔄 Retry Failures</button>
-                        <button id="exportWordBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;" disabled>📝 Export Word</button>
                         <button id="exportPdfBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;" disabled>📄 Export PDF</button>
                         <button id="closePrintBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;">Close</button>
                         <button id="doPrintBtn" class="btn" style="padding: 0.5rem 1rem;" disabled>Print</button>
@@ -4195,17 +4194,17 @@
                 if (statusText) statusText.textContent = `Images: ${loaded} Loaded, ${failed} Failed / ${total} Total`;
 
                 const printBtn = document.getElementById('doPrintBtn');
-                const exportBtn = document.getElementById('exportWordBtn');
+                const exportPdfBtn = document.getElementById('exportPdfBtn');
 
                 if (failed > 0) {
                     printBtn.classList.remove('btn-success');
                     printBtn.classList.add('btn-warning');
-                    if (exportBtn) exportBtn.classList.add('btn-warning'); // Also warn export button
+                    if (exportPdfBtn) exportPdfBtn.classList.add('btn-warning');
                     retryBtn.style.display = 'inline-block';
                 } else {
                     printBtn.classList.remove('btn-warning');
                     printBtn.classList.add('btn-success');
-                    if (exportBtn) exportBtn.classList.remove('btn-warning'); // Remove warning if all good
+                    if (exportPdfBtn) exportPdfBtn.classList.remove('btn-warning');
                     retryBtn.style.display = 'none';
                 }
             };
@@ -4523,7 +4522,6 @@
                 const statusIcon = document.getElementById('printStatusIcon');
                 const printBtn = document.getElementById('doPrintBtn');
                 const retryBtn = document.getElementById('retryPrintBtn');
-                const exportBtn = document.getElementById('exportWordBtn');
                 const statusText = document.getElementById('printStatusText');
 
                 // Clear the hourglass icon when done
@@ -4535,7 +4533,6 @@
                 setTimeout(() => {
                     if (printBtn) {
                         printBtn.removeAttribute('disabled');
-                        if (exportBtn) exportBtn.removeAttribute('disabled');
                         const exportPdfBtn = document.getElementById('exportPdfBtn');
                         if (exportPdfBtn) exportPdfBtn.removeAttribute('disabled');
 
@@ -4553,7 +4550,7 @@
         }
 
         async function editRecord(rowIndex) {
-            const record = globalAnimalRecords[rowIndex];
+            const record = allRecords[rowIndex];
             if (!record) return;
 
             currentEditRow = rowIndex;
