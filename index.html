@@ -1690,7 +1690,7 @@
     </div>
     <footer>
         <p>AnimalOps © 2026 - Built for animal rescue organizations with ❤️</p>
-        <p style="font-size: 0.8rem; color: #888; margin-top: 0.5rem;">Last Modified: 2026-02-12 00:07:12</p>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 0.5rem;">Last Modified: 2026-02-12 00:20:00</p>
     </footer>
 
     <script>
@@ -4502,6 +4502,8 @@
                     if (printBtn) {
                         printBtn.removeAttribute('disabled');
                         if (exportBtn) exportBtn.removeAttribute('disabled');
+                        const exportPdfBtn = document.getElementById('exportPdfBtn');
+                        if (exportPdfBtn) exportPdfBtn.removeAttribute('disabled');
 
                         if (failedCount > 0) {
                             printBtn.classList.add('btn-warning');
