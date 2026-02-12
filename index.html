@@ -3947,6 +3947,7 @@
                         <span id="printStatusText">Preparing ${recordsToPrint.length} record(s)...</span>
                     </div>
                     <div style="display: flex; gap: 1rem;">
+                        <button id="retryPrintBtn" class="btn btn-outline" style="padding: 0.5rem 1rem; display: none;">🔄 Retry Failures</button>
                         <button id="closePrintBtn" class="btn btn-outline" style="padding: 0.5rem 1rem;">Close</button>
                         <button id="doPrintBtn" class="btn" style="padding: 0.5rem 1rem;" disabled>Print</button>
                     </div>
@@ -3969,6 +3970,103 @@
             // Print button handler
             document.getElementById('doPrintBtn').onclick = () => {
                 window.print();
+            };
+
+            // Retry button handler
+            document.getElementById('retryPrintBtn').onclick = async () => {
+                const retryBtn = document.getElementById('retryPrintBtn');
+                retryBtn.disabled = true;
+                retryBtn.innerHTML = '<div class="loading-spinner" style="width: 1em; height: 1em; border-width: 2px;"></div> Retrying...';
+
+                // Find all failed images
+                const failedImages = Array.from(document.getElementById('printContent').querySelectorAll('img.print-image-failed'));
+
+                if (failedImages.length === 0) {
+                    retryBtn.style.display = 'none';
+                    return;
+                }
+
+                // Reset specific images to loading state
+                failedImages.forEach(img => {
+                    img.style.opacity = '0.5';
+                    img.style.border = 'none';
+                });
+
+                // Re-resolve and re-load
+                // Note: We need to access totalImages and update main counters, so we might need to scope this better.
+                // For simplicity, let's just re-run the "wait for images" logic on these specific elements
+
+                // Track results of retry
+                let retriedSuccess = 0;
+                let retriedFail = 0;
+
+                const retryPromises = failedImages.map(async (img) => {
+                    const originalUrl = img.dataset.originalSrc;
+                    if (!originalUrl) return;
+
+                    // 1. Re-resolve URL
+                    const newUrl = await resolvePhotoUrl(originalUrl);
+
+                    if (!newUrl) {
+                        // Still failed to resolve
+                        img.style.border = '2px solid red';
+                        img.alt = 'Retry Failed';
+                        retriedFail++;
+                        return;
+                    }
+
+                    // 2. Set new source
+                    img.src = newUrl;
+                    img.classList.remove('print-image-failed'); // Optimistically remove failure class
+
+                    // 3. Wait for load/decode
+                    return new Promise(resolve => {
+                        const onDecode = () => {
+                            retriedSuccess++;
+                            img.style.opacity = '1';
+                            resolve();
+                        };
+                        const onError = () => {
+                            retriedFail++;
+                            img.style.border = '2px solid red';
+                            img.classList.add('print-image-failed');
+                            resolve();
+                        };
+
+                        if (img.decode) {
+                            img.decode().then(onDecode).catch(onError);
+                        } else {
+                            img.onload = onDecode;
+                            img.onerror = onError;
+                        }
+                    });
+                });
+
+                await Promise.all(retryPromises);
+
+                // Update UI state
+                retryBtn.innerHTML = '🔄 Retry Failures';
+                retryBtn.disabled = false;
+
+                // Re-calculate global totals
+                const allImages = Array.from(document.getElementById('printContent').querySelectorAll('img'));
+                const total = allImages.length;
+                const failed = document.getElementById('printContent').querySelectorAll('img.print-image-failed').length;
+                const loaded = total - failed; // Approximate, but good enough
+
+                const statusText = document.getElementById('printStatusText');
+                if (statusText) statusText.textContent = `Images: ${loaded} Loaded, ${failed} Failed / ${total} Total`;
+
+                const printBtn = document.getElementById('doPrintBtn');
+                if (failed > 0) {
+                    printBtn.classList.remove('btn-success');
+                    printBtn.classList.add('btn-warning');
+                    retryBtn.style.display = 'inline-block';
+                } else {
+                    printBtn.classList.remove('btn-warning');
+                    printBtn.classList.add('btn-success');
+                    retryBtn.style.display = 'none';
+                }
             };
 
             // Helper to resolve a single photo URL
@@ -4022,81 +4120,81 @@
                         <div class="header-logo">
                             <h1>🐾 AnimalOps Record</h1>
                         </div>
-                        
+
                         <div class="print-info-grid">
                             <div class="print-info-item">
                                 <div class="print-info-label">Name</div>
                                 <div class="print-info-value">${record.name || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Species</div>
                                 <div class="print-info-value">${record.species || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">ID</div>
                                 <div class="print-info-value">${record.animalId || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Breed</div>
                                 <div class="print-info-value">${record.breed || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Age</div>
                                 <div class="print-info-value">${record.age || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Gender</div>
                                 <div class="print-info-value">${record.gender || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Intake Date</div>
                                 <div class="print-info-value">${record.intakeDate || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Building ID</div>
                                 <div class="print-info-value">${record.buildingId || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Color</div>
                                 <div class="print-info-value">${record.color || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Body Condition Score</div>
                                 <div class="print-info-value">${record.bodyConditionScore || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Food and Water Availability</div>
                                 <div class="print-info-value">${record.foodWaterAvailability || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Housing Description</div>
                                 <div class="print-info-value">${record.housingDescription || 'N/A'}</div>
                             </div>
-                            
+
                             <div class="print-info-item">
                                 <div class="print-info-label">Number of Photos</div>
                                 <div class="print-info-value">${record.photoCount || '0'}</div>
                             </div>
                         </div>
-                        
+
                         ${record.healthNotes ? `
                             <div class="print-notes">
                                 <h3>Health Notes</h3>
                                 <p>${record.healthNotes}</p>
                             </div>
                         ` : ''}
-                        
+
                         ${record.behaviorNotes ? `
                             <div class="print-notes">
                                 <h3>Behavior Notes</h3>
@@ -4111,22 +4209,32 @@
                     const rawUrls = record.photoLinks.split('|||').filter(url => url);
 
                     // Resolve all URLs for this record in parallel
-                    const photoUrls = await Promise.all(rawUrls.map(url => resolvePhotoUrl(url)));
+                    // Note: We need to keep indices aligned to rawUrls so we can associate correct rawUrl
+                    const photoUrlResults = await Promise.all(rawUrls.map(url => resolvePhotoUrl(url)));
 
-                    photoUrls.forEach((photoUrl, i) => {
+                    photoUrlResults.forEach((photoUrl, i) => {
+                        const originalUrl = rawUrls[i];
                         if (photoUrl) {
                             pagesHTML += `
                                 <div class="print-page print-photo-page">
-                                    <img src="${photoUrl}" alt="${record.name} - Photo ${i + 1}" data-photo-index="${i}">
+                                    <img src="${photoUrl}"
+                                         data-original-src="${originalUrl}"
+                                         alt="${record.name} - Photo ${i + 1}"
+                                         data-photo-index="${i}">
                                     <div class="print-photo-caption">
                                         ${record.animalId} - Photo ${i + 1} of ${rawUrls.length}
                                     </div>
                                 </div>
                             `;
                         } else {
-                            // Link failed to resolve
+                            // Link failed to resolve - Render placeholder image so we can retry!
                             pagesHTML += `
                                 <div class="print-page print-photo-page">
+                                    <img src=""
+                                         class="print-image-failed"
+                                         data-original-src="${originalUrl}"
+                                         alt="Photo Loading Failed"
+                                         style="border: 2px solid red; min-width: 200px; min-height: 200px; background: #fee;">
                                     <div class="print-photo-caption" style="color: red;">
                                         Failed to load photo ${i + 1}
                                     </div>
@@ -4169,6 +4277,12 @@
                 if (statusText) {
                     statusText.textContent = `Images: ${loaded} Loaded, ${failed} Failed / ${totalImages} Total`;
                 }
+
+                // Show/Hide Retry Button
+                const retryBtn = document.getElementById('retryPrintBtn');
+                if (retryBtn) {
+                    retryBtn.style.display = failed > 0 ? 'inline-block' : 'none';
+                }
             };
 
             updateStatus(0, 0);
@@ -4180,6 +4294,14 @@
             const imagePromises = images.map(img => {
                 // Return a promise that resolves when decoding is complete or fails
                 return new Promise(resolve => {
+                    // Check if already marked as failed (from resolution step)
+                    if (img.classList.contains('print-image-failed')) {
+                        failedCount++;
+                        updateStatus(loadedCount, failedCount);
+                        resolve({ success: false, img });
+                        return;
+                    }
+
                     // Check if already complete and decoded (rare but possible)
                     if (img.complete && img.naturalHeight !== 0) {
                         try {
@@ -4189,6 +4311,7 @@
                                 resolve({ success: true, img });
                             }).catch(() => {
                                 failedCount++;
+                                img.classList.add('print-image-failed');
                                 updateStatus(loadedCount, failedCount);
                                 img.style.opacity = '0.5'; // Visual indication of failure
                                 resolve({ success: false, img });
@@ -4213,6 +4336,7 @@
                     const onError = () => {
                         console.warn('Failed to load image for print:', img.src);
                         failedCount++;
+                        img.classList.add('print-image-failed');
                         updateStatus(loadedCount, failedCount);
 
                         img.style.border = '2px solid red';
@@ -4253,6 +4377,7 @@
             Promise.all(imagePromises).then(() => {
                 const statusIcon = document.getElementById('printStatusIcon');
                 const printBtn = document.getElementById('doPrintBtn');
+                const retryBtn = document.getElementById('retryPrintBtn');
                 const statusText = document.getElementById('printStatusText');
 
                 // Clear the hourglass icon when done
@@ -4267,8 +4392,10 @@
                         if (failedCount > 0) {
                             printBtn.classList.add('btn-warning');
                             printBtn.title = "Some images failed to load";
+                            if (retryBtn) retryBtn.style.display = 'inline-block'; // Force show retry button
                         } else {
                             printBtn.classList.add('btn-success');
+                            if (retryBtn) retryBtn.style.display = 'none';
                         }
                     }
                 }, 1000);
