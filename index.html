@@ -1691,7 +1691,7 @@
     </div>
     <footer>
         <p>AnimalOps © 2026 - Built for animal rescue organizations with ❤️</p>
-        <p style="font-size: 0.8rem; color: #888; margin-top: 0.5rem;">Last Modified: 2026-02-12 00:46:00</p>
+        <p style="font-size: 0.8rem; color: #888; margin-top: 0.5rem;">Last Modified: 2026-02-12 00:55:00</p>
     </footer>
 
     <script>
@@ -4013,69 +4013,7 @@
                 return content;
             };
 
-            // Export Word Handler
-            document.getElementById('exportWordBtn').onclick = async () => {
-                const btn = document.getElementById('exportWordBtn');
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<div class="loading-spinner" style="width: 1em; height: 1em; border-width: 2px;"></div> Converting...';
 
-                try {
-                    const content = await prepareContentForExport();
-
-                    // 3. Prepare CSS
-                    // Added max-width: 600px to img to prevent cutoff in Word
-                    const css = `
-                        <style>
-                            body { font-family: Arial, sans-serif; }
-                            .print-page { page-break-after: always; padding: 20px; }
-                            .print-cover { text-align: center; }
-                            .header-logo h1 { font-size: 24pt; color: #333; }
-                            .print-info-grid { display: block; }
-                            .print-info-item { margin-bottom: 10px; border-bottom: 1px solid #eee; }
-                            .print-info-label { font-weight: bold; color: #666; font-size: 10pt; }
-                            .print-info-value { font-size: 12pt; }
-                            .print-notes { margin-top: 20px; text-align: left; background: #f9f9f9; padding: 10px; border: 1px solid #ddd; }
-                            .print-photo-page { text-align: center; }
-                            .print-photo-page img { max-width: 600px; height: auto; max-height: 800px; } 
-                            .print-photo-caption { font-size: 10pt; color: #666; margin-top: 10px; }
-                        </style>
-                    `;
-
-                    // 4. Construct HTML Blob
-                    const preHtml = `
-                        <html xmlns:o='urn:schemas-microsoft-com:office:office' 
-                              xmlns:w='urn:schemas-microsoft-com:office:word' 
-                              xmlns='http://www.w3.org/TR/REC-html40'>
-                        <head>
-                            <meta charset='utf-8'>
-                            <title>AnimalOps Export</title>
-                            ${css}
-                        </head>
-                        <body>
-                    `;
-                    const postHtml = `</body></html>`;
-
-                    const fullHtml = preHtml + content.innerHTML + postHtml;
-                    const blob = new Blob([fullHtml], { type: 'application/vnd.ms-word' });
-
-                    const downloadLink = document.createElement("a");
-                    document.body.appendChild(downloadLink);
-                    const url = URL.createObjectURL(blob);
-                    downloadLink.href = url;
-                    downloadLink.download = `AnimalOps_Export_${new Date().toISOString().slice(0, 10)}.doc`;
-                    downloadLink.click();
-                    document.body.removeChild(downloadLink);
-                    URL.revokeObjectURL(url);
-
-                } catch (error) {
-                    console.error('Export Word failed:', error);
-                    alert('Export failed. Check console for details.');
-                } finally {
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                }
-            };
 
             // Export PDF Handler
             document.getElementById('exportPdfBtn').onclick = async () => {
@@ -4410,7 +4348,7 @@
                 document.getElementById('doPrintBtn').removeAttribute('disabled');
 
                 // Also enable Export button
-                document.getElementById('exportWordBtn').removeAttribute('disabled');
+                document.getElementById('exportPdfBtn').removeAttribute('disabled');
 
                 return;
             }
